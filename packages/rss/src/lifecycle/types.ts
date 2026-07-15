@@ -53,3 +53,45 @@ export interface FeedLifecycleHooks {
     metadata: Record<string, unknown>;
   }) => void | Promise<void>;
 }
+
+export type FeedLifecycleTransitionType = 'automatic' | 'administrative' | 'failure' | 'recovery';
+
+export interface FeedLifecycleTransitionDefinition {
+  readonly id: string;
+  readonly from: FeedLifecycleState;
+  readonly to: FeedLifecycleState;
+  readonly category: 'automatic' | 'administrative' | 'failure' | 'recovery';
+  readonly description: string;
+  readonly operationalIntent: string;
+  readonly transitionType: FeedLifecycleTransitionType;
+  readonly visibility: 'internal' | 'external';
+}
+
+export interface FeedLifecycleStateMetadata {
+  readonly code: FeedLifecycleState;
+  readonly displayName: string;
+  readonly description: string;
+  readonly classification:
+    'initial' | 'operational' | 'temporary' | 'failure' | 'administrative' | 'terminal';
+  readonly terminal: boolean;
+  readonly recoverable: boolean;
+  readonly operationalCategory: 'draft' | 'validation' | 'operational' | 'inactive' | 'terminal';
+}
+
+export interface FeedLifecycleStateMachine {
+  canTransition(
+    fromState: FeedLifecycleState | string,
+    toState: FeedLifecycleState | string,
+  ): boolean;
+  transition(
+    fromState: FeedLifecycleState | string,
+    toState: FeedLifecycleState | string,
+  ): FeedLifecycleState;
+  getMetadata(state: FeedLifecycleState | string): FeedLifecycleStateMetadata | undefined;
+  getTransitions(state: FeedLifecycleState | string): readonly FeedLifecycleState[];
+}
+
+export type FeedLifecycleTransitionRegistry = Map<
+  FeedLifecycleState,
+  readonly FeedLifecycleState[]
+>;

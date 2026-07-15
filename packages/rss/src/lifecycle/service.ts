@@ -4,6 +4,7 @@ import {
   FeedValidationRequiredError,
   InvalidStateTransitionError,
 } from './errors';
+import { getFeedLifecycleStateMachine, getFeedLifecycleTransitionRegistry } from './registry';
 import type {
   FeedLifecycleHooks,
   FeedLifecycleLogger,
@@ -143,24 +144,7 @@ export class FeedLifecycleService {
     previousState: FeedLifecycleState,
     nextState: FeedLifecycleState,
   ): boolean {
-    const allowed = new Map<FeedLifecycleState, readonly FeedLifecycleState[]>([
-      ['NEW', ['REGISTERED', 'VALIDATING', 'DELETED']],
-      ['REGISTERED', ['VALIDATING', 'VALIDATION_FAILED', 'READY', 'DISABLED', 'DELETED']],
-      ['VALIDATING', ['READY', 'VALIDATION_FAILED', 'DISABLED', 'DELETED']],
-      ['VALIDATION_FAILED', ['VALIDATING', 'READY', 'DISABLED', 'DELETED']],
-      ['READY', ['IMPORTING', 'ACTIVE', 'DISABLED', 'ARCHIVED', 'DELETED']],
-      ['IMPORTING', ['READY', 'ACTIVE', 'IMPORT_FAILED', 'DISABLED', 'ARCHIVED', 'DELETED']],
-      ['IMPORT_FAILED', ['VALIDATING', 'READY', 'DISABLED', 'DELETED']],
-      ['ACTIVE', ['SYNCING', 'PAUSED', 'DISABLED', 'ARCHIVED', 'DELETED', 'READY']],
-      ['SYNCING', ['ACTIVE', 'SYNC_FAILED', 'PAUSED', 'DISABLED', 'ARCHIVED', 'DELETED', 'READY']],
-      ['SYNC_FAILED', ['ACTIVE', 'SYNCING', 'READY', 'DISABLED', 'DELETED']],
-      ['PAUSED', ['ACTIVE', 'READY', 'DISABLED', 'ARCHIVED', 'DELETED']],
-      ['DISABLED', ['ACTIVE', 'READY', 'ARCHIVED', 'DELETED']],
-      ['ARCHIVED', ['ACTIVE', 'DELETED', 'READY']],
-      ['DELETED', []],
-    ]);
-
-    return (allowed.get(previousState) ?? []).includes(nextState);
+    return getFeedLifecycleStateMachine().canTransition(previousState, nextState);
   }
 
   private validateBusinessRules(

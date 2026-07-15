@@ -1,7 +1,12 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { FeedLifecycleService } from '../src/lifecycle';
+import {
+  FeedLifecycleService,
+  getFeedLifecycleStateMachine,
+  getFeedLifecycleStateMetadata,
+  getFeedLifecycleTransitionRegistry,
+} from '../src/lifecycle';
 
 test('allows recovery from disabled state and rejects archived import', () => {
   const service = new FeedLifecycleService();
@@ -19,4 +24,16 @@ test('allows recovery from disabled state and rejects archived import', () => {
   assert.equal(transition.allowed, true);
   assert.equal(service.canImport('ARCHIVED'), false);
   assert.equal(service.canSynchronize('DISABLED'), false);
+});
+
+test('exposes a centralized lifecycle registry and state metadata', () => {
+  const registry = getFeedLifecycleTransitionRegistry();
+  const metadata = getFeedLifecycleStateMetadata('ACTIVE');
+  const machine = getFeedLifecycleStateMachine();
+
+  assert.ok(registry.has('ACTIVE'));
+  assert.ok(registry.get('ACTIVE')?.includes('SYNCING'));
+  assert.equal(metadata?.displayName, 'Active');
+  assert.equal(machine.canTransition('DISABLED', 'ACTIVE'), true);
+  assert.equal(machine.canTransition('DELETED', 'ACTIVE'), false);
 });

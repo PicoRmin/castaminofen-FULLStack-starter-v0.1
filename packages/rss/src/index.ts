@@ -69,9 +69,14 @@ export type {
   FeedLifecycleHooks,
   FeedLifecycleLogger,
   FeedLifecycleState,
+  FeedLifecycleStateMachine,
+  FeedLifecycleStateMetadata,
   FeedLifecycleTransition,
+  FeedLifecycleTransitionDefinition,
+  FeedLifecycleTransitionRegistry,
   FeedLifecycleTransitionRequest,
   FeedLifecycleTransitionResult,
+  FeedLifecycleTransitionType,
 } from './lifecycle/types';
 export {
   canBeArchived,
