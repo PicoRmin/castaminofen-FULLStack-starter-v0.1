@@ -1,0 +1,20 @@
+# یک لینک RSS در هر خط
+# خطوطی که با # شروع شوند نادیده گرفته می‌شوند
+
+https://feed.podbean.com/RadioRaah/feed.xml
+https://rss.castbox.fm/everest/1f4e2c0cae1740f5bff605527db43b59.xml
+https://feeds.acast.com/public/shows/65417dfc6143f1001280fb90
+https://www.omnycontent.com/d/playlist/05c002e0-37f2-42b5-a34d-b38c00523ad5/e7f9558f-024b-418b-96d7-b420015b6f1e/26fe549e-ec26-42b6-8d2e-b420015b6f37/podcast.rss
+https://feeds.acast.com/public/shows/6253d9a4d862aa0012f384fa
+https://feed.podbean.com/charcharkh/feed.xml
+https://feeds.acast.com/public/shows/69212ea3c367efee96509473
+https://feeds.acast.com/public/shows/624fd0fe3b43120012e43cb5
+https://feeds.acast.com/public/shows/624d67c5c6535900128484a3
+https://shenoto.net/service/api/feed/yurionradio
+https://feeds.acast.com/public/shows/628cf0e369be4d0014f80b46
+https://feeds.acast.com/public/shows/65674fccc3ca8a00127b7474
+https://feed.podbean.com/digesttt/feed.xml
+https://feeds.acast.com/public/shows/66556d86a8e5c200126c6fac
+https://feeds.transistor.fm/b9dc6eb4-5cff-40b0-9813-71f649d0853b
+https://feeds.acast.com/public/shows/69c78827b9917327710c49c5
+http://rss.castbox.fm/everest/1f4e2c0cae1740f5bff605527db43b59.xml

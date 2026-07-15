@@ -1,0 +1,24 @@
+# Next.js
+.next/
+
+# Build outputs
+dist/
+build/
+out/
+
+# Node
+node_modules/
+
+# Turbo
+.turbo/
+
+# Logs
+*.log
+
+# Environment
+#.env
+#.env.*
+
+# OS
+.DS_Store
+Thumbs.db
