@@ -546,7 +546,7 @@ function createDecisionStage(): TransitionPipelineStage {
     run(context) {
       const decision = engine.evaluate({
         request: context.request,
-        transitionDefinition: context.resolvedTransition,
+        transitionDefinition: context.resolvedTransition ?? undefined,
         executionIdentifier: context.metadata.executionId,
         correlationIdentifier: context.metadata.correlationId ?? context.request.correlationId,
         transitionIdentifier: context.resolvedTransition?.id,

@@ -69,32 +69,34 @@ export interface TransitionDecisionResult {
 
 export interface TransitionDecisionContext {
   readonly request: FeedLifecycleTransitionRequest;
-  readonly transitionDefinition?: FeedLifecycleTransitionDefinition;
-  readonly executionIdentifier?: string;
-  readonly correlationIdentifier?: string;
-  readonly transitionIdentifier?: string;
-  readonly sourceState?: string;
-  readonly targetState?: string;
-  readonly requestSource?: string;
-  readonly actor?: string;
-  readonly executionContext?: Record<string, unknown>;
-  readonly pipelineContext?: Record<string, unknown>;
-  readonly validationResult?: TransitionValidationResult;
-  readonly guardResult?: TransitionGuardResult;
-  readonly policyResult?: {
-    readonly allowed: boolean;
-    readonly status: 'allowed' | 'rejected' | 'deferred' | 'warning' | 'pending';
-    readonly identifier?: string;
-    readonly reason?: string;
-    readonly code?: string;
-    readonly metadata?: Record<string, unknown>;
-  };
-  readonly repositorySnapshot?: Record<string, unknown>;
-  readonly configuration?: Record<string, unknown>;
-  readonly environment?: Record<string, unknown>;
-  readonly featureFlags?: Record<string, boolean>;
-  readonly metadata?: Record<string, unknown>;
-  readonly evaluationTimestamp?: string;
+  readonly transitionDefinition?: FeedLifecycleTransitionDefinition | undefined;
+  readonly executionIdentifier?: string | undefined;
+  readonly correlationIdentifier?: string | undefined;
+  readonly transitionIdentifier?: string | undefined;
+  readonly sourceState?: string | undefined;
+  readonly targetState?: string | undefined;
+  readonly requestSource?: string | undefined;
+  readonly actor?: string | undefined;
+  readonly executionContext?: Record<string, unknown> | undefined;
+  readonly pipelineContext?: Record<string, unknown> | undefined;
+  readonly validationResult?: TransitionValidationResult | undefined;
+  readonly guardResult?: TransitionGuardResult | undefined;
+  readonly policyResult?:
+    | {
+        readonly allowed: boolean;
+        readonly status: 'allowed' | 'rejected' | 'deferred' | 'warning' | 'pending';
+        readonly identifier?: string | undefined;
+        readonly reason?: string | undefined;
+        readonly code?: string | undefined;
+        readonly metadata?: Record<string, unknown> | undefined;
+      }
+    | undefined;
+  readonly repositorySnapshot?: Record<string, unknown> | undefined;
+  readonly configuration?: Record<string, unknown> | undefined;
+  readonly environment?: Record<string, unknown> | undefined;
+  readonly featureFlags?: Record<string, boolean> | undefined;
+  readonly metadata?: Record<string, unknown> | undefined;
+  readonly evaluationTimestamp?: string | undefined;
 }
 
 export interface TransitionDecisionEngine {
