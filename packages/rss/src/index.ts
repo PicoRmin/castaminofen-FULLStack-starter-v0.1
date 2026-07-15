@@ -56,3 +56,4 @@ export type {
 export * from './synchronization';
 export * from './health';
 export * from './telemetry';
+export * from './queue';
