@@ -6,6 +6,7 @@ export * from './metrics/metric-aggregator';
 export * from './tracing/telemetry-trace';
 export * from './types/metric-types';
 
+import type { TelemetryEvent, TelemetryWarning } from './events/telemetry-event';
 import { createTelemetryEvent, createTelemetryWarning } from './events/telemetry-event';
 import { DefaultTelemetryMetricAggregator } from './metrics/metric-aggregator';
 import { TelemetryTraceSpan } from './tracing/telemetry-trace';

@@ -121,7 +121,14 @@ export class ComparisonEngine {
     entity: string,
     context?: Record<string, unknown>,
   ): ComparisonWarning {
-    return { code, message, stage, severity, entity, context: context ?? undefined };
+    return Object.freeze({
+      code,
+      message,
+      stage,
+      severity,
+      entity,
+      ...(context !== undefined ? { context } : {}),
+    });
   }
 
   private error(
@@ -130,9 +137,16 @@ export class ComparisonEngine {
     stage: string,
     feedId: string,
     context?: Record<string, unknown>,
-    recovery?: string,
+    recovery?: string | undefined,
   ): ComparisonError {
-    return { code, message, stage, entity: 'feed', context: context ?? { feedId }, recovery };
+    return Object.freeze({
+      code,
+      message,
+      stage,
+      entity: 'feed',
+      ...(context !== undefined ? { context } : {}),
+      ...(recovery !== undefined ? { recovery } : {}),
+    });
   }
 }
 
@@ -143,7 +157,7 @@ export class DifferenceEngine {
     if (result.errors.length > 0) {
       throw new DifferenceEngineError('Difference engine could not compare snapshots.', {
         feedId: context.request.feedId,
-        context: result.errors[0],
+        context: result.errors[0] ? { error: result.errors[0] } : undefined,
       });
     }
     return result;

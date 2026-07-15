@@ -83,10 +83,9 @@ export class FeedConcurrencyController implements FeedConcurrencyControllerLike 
       if (!validation.valid) {
         return {
           allowed: false,
-          warnings,
+          warnings: validation.warnings,
           stage: 'lease-validation',
           ...(validation.conflict ? { conflict: validation.conflict } : {}),
-          warnings: validation.warnings,
         } as FeedLockExecutionDecision;
       }
       warnings.push(...validation.warnings);
