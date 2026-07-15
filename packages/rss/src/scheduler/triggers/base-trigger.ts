@@ -3,7 +3,9 @@ import type { SchedulingPolicyContract } from '../contracts/scheduling-policy-co
 import type { SchedulerTriggerContract } from '../contracts/scheduler-trigger-contract';
 import { SchedulerContextFactory } from '../context/scheduler-context';
 
-export abstract class BaseTrigger<TPayload = unknown> implements SchedulerTriggerContract<TPayload> {
+export abstract class BaseTrigger<
+  TPayload = unknown,
+> implements SchedulerTriggerContract<TPayload> {
   public readonly createdAt: number;
   public readonly nextRunAt: number;
   public readonly configuration: Readonly<Record<string, unknown>>;
@@ -12,8 +14,8 @@ export abstract class BaseTrigger<TPayload = unknown> implements SchedulerTrigge
   public readonly policyId: string;
   public readonly correlationId: string;
   public readonly scheduleName: string;
-  public readonly timezone?: string;
-  public readonly expression?: string;
+  public readonly timezone: string | undefined;
+  public readonly expression: string | undefined;
 
   protected constructor(params: {
     readonly id: string;
@@ -28,8 +30,8 @@ export abstract class BaseTrigger<TPayload = unknown> implements SchedulerTrigge
     readonly nextRunAt?: number;
     readonly scheduleName?: string;
     readonly configuration?: Readonly<Record<string, unknown>>;
-    readonly expression?: string;
-    readonly timezone?: string;
+    readonly expression: string | undefined;
+    readonly timezone: string | undefined;
   }) {
     this.createdAt = params.createdAt ?? Date.now();
     this.nextRunAt = params.nextRunAt ?? this.createdAt;
@@ -39,8 +41,12 @@ export abstract class BaseTrigger<TPayload = unknown> implements SchedulerTrigge
     this.policyId = params.policyId ?? 'fixed-interval';
     this.correlationId = params.correlationId ?? `corr-${params.id}`;
     this.scheduleName = params.scheduleName ?? params.name;
-    this.timezone = params.timezone;
-    this.expression = params.expression;
+    if (params.timezone !== undefined) {
+      this.timezone = params.timezone;
+    }
+    if (params.expression !== undefined) {
+      this.expression = params.expression;
+    }
   }
 
   public abstract readonly id: string;
@@ -49,7 +55,11 @@ export abstract class BaseTrigger<TPayload = unknown> implements SchedulerTrigge
   public abstract readonly kind: SchedulerTriggerKind;
   public abstract readonly payload: TPayload | undefined;
 
-  public evaluate(context: SchedulerContext, policy: SchedulingPolicyContract | undefined, timeProvider: SchedulerTimeProvider) {
+  public evaluate(
+    context: SchedulerContext,
+    policy: SchedulingPolicyContract | undefined,
+    timeProvider: SchedulerTimeProvider,
+  ) {
     if (!policy) {
       return {
         shouldTrigger: true,
@@ -63,7 +73,12 @@ export abstract class BaseTrigger<TPayload = unknown> implements SchedulerTrigge
     return policy.evaluate(context, this, timeProvider);
   }
 
-  public createContext(schedulerId: string, policyId: string, timeProvider: SchedulerTimeProvider, state = 'created'): SchedulerContext {
+  public createContext(
+    schedulerId: string,
+    policyId: string,
+    timeProvider: SchedulerTimeProvider,
+    state = 'created',
+  ): SchedulerContext {
     return new SchedulerContextFactory().createContext({
       schedulerId,
       triggerId: this.id,
@@ -76,7 +91,16 @@ export abstract class BaseTrigger<TPayload = unknown> implements SchedulerTrigge
       creationTimestamp: timeProvider.now(),
       metadata: this.metadata,
       triggerKind: this.kind,
-      state: state as never,
+      state: state as
+        | 'created'
+        | 'scheduled'
+        | 'waiting'
+        | 'triggered'
+        | 'dispatched'
+        | 'skipped'
+        | 'cancelled'
+        | 'expired'
+        | 'completed',
       scheduledFor: this.nextRunAt,
       policyKind: 'custom',
     });

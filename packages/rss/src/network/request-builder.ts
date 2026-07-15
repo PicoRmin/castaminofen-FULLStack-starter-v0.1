@@ -71,7 +71,7 @@ export class HttpRequestBuilder {
       throw new Error('A request URL is required.');
     }
 
-    const parsed = new URL(this.url);
+    const parsed = this.parseAndValidateUrl(this.url);
     const headers: HttpHeaders = {
       accept: 'application/rss+xml, application/xml, text/xml, application/atom+xml, */*',
       'accept-encoding': this.allowCompression ? 'gzip, deflate, br, identity' : 'identity',
@@ -105,6 +105,56 @@ export class HttpRequestBuilder {
       ...(this.ifNoneMatch ? { ifNoneMatch: this.ifNoneMatch } : {}),
       ...(this.ifModifiedSince ? { ifModifiedSince: this.ifModifiedSince } : {}),
     };
+  }
+
+  private parseAndValidateUrl(url: string): URL {
+    let parsed: URL;
+    try {
+      parsed = new URL(url);
+    } catch {
+      throw new Error('Invalid URL provided.');
+    }
+
+    if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+      throw new Error('Only http and https URLs are supported.');
+    }
+
+    if (this.isPrivateOrLocalHost(parsed.hostname)) {
+      throw new Error('Private or local URLs are not allowed.');
+    }
+
+    return parsed;
+  }
+
+  private isPrivateOrLocalHost(hostname: string): boolean {
+    const normalized = hostname.toLowerCase();
+    if (!normalized || normalized === 'localhost') {
+      return true;
+    }
+
+    if (normalized.startsWith('127.') || normalized === '::1' || normalized === '[::1]') {
+      return true;
+    }
+
+    if (normalized.includes('.local')) {
+      return true;
+    }
+
+    const octets = normalized.split('.').filter((part) => /^\d+$/.test(part));
+    if (octets.length === 4) {
+      const [first, second] = octets.map((value) => Number(value));
+      if (first === 10) {
+        return true;
+      }
+      if (first === 172 && typeof second === 'number' && second >= 16 && second <= 31) {
+        return true;
+      }
+      if (first === 192 && typeof second === 'number' && second === 168) {
+        return true;
+      }
+    }
+
+    return false;
   }
 
   private createRequestId(): string {

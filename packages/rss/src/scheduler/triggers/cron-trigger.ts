@@ -23,7 +23,11 @@ export class CronTrigger<TPayload = unknown> extends BaseTrigger<TPayload> {
     readonly expression?: string;
     readonly timezone?: string;
   }) {
-    super({ ...params, expression: params.expression, timezone: params.timezone });
+    super({
+      ...params,
+      expression: params.expression === undefined ? undefined : params.expression,
+      timezone: params.timezone === undefined ? undefined : params.timezone,
+    });
     this.id = params.id;
     this.name = params.name;
     this.feedId = params.feedId;
