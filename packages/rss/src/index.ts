@@ -66,6 +66,14 @@ export {
 } from './lifecycle/errors';
 export { FeedLifecycleService } from './lifecycle/service';
 export {
+  createDefaultTransitionPipeline,
+  TransitionProcessingPipeline,
+  type TransitionPipelineContext,
+  type TransitionPipelineRequest,
+  type TransitionPipelineResult,
+  type TransitionPipelineStage,
+} from './lifecycle/pipeline';
+export {
   getAllowedTransitions,
   getFeedLifecycleStateDefinitions,
   getFeedLifecycleStateMachine,
