@@ -4,6 +4,7 @@ import { normalizeFeedStatus } from '../status';
 import { evaluateTransitionGuards } from './guard-registry';
 import { getFeedLifecycleTransitionById } from './registry';
 import { createLifecyclePolicyEngine, type LifecyclePolicyEvaluationInput } from './policy-engine';
+import { createTransitionDecisionEngine, type TransitionDecisionResult } from './decision-engine';
 import type {
   FeedLifecycleState,
   FeedLifecycleTransitionDefinition,
@@ -42,6 +43,7 @@ export interface TransitionPipelineContext {
   readonly validationResult: ReturnType<typeof validateTransitionRequest> | undefined;
   readonly guardResult: ReturnType<typeof evaluateTransitionGuards> | undefined;
   readonly policyResult: TransitionPolicyResult | undefined;
+  readonly decisionResult: TransitionDecisionResult | undefined;
   readonly executionResult: TransitionExecutionResult | undefined;
   readonly persistenceResult: TransitionPersistenceResult | undefined;
   readonly loggingMetadata: Record<string, unknown>;
@@ -212,6 +214,7 @@ export class TransitionProcessingPipeline {
       validationResult: undefined,
       guardResult: undefined,
       policyResult: undefined,
+      decisionResult: undefined,
       executionResult: undefined,
       persistenceResult: undefined,
       loggingMetadata: {},
@@ -310,6 +313,7 @@ function createDefaultStages(): readonly TransitionPipelineStage[] {
     createValidationStage(),
     createGuardStage(),
     createPolicyStage(),
+    createDecisionStage(),
     createExecutionStage(),
     createPersistenceStage(),
     createLoggingStage(),
@@ -524,6 +528,76 @@ function createPolicyStage(): TransitionPipelineStage {
             policy: {
               status: policyEvaluation.status,
               code: policyEvaluation.code,
+            },
+          },
+        },
+      };
+    },
+  };
+}
+
+function createDecisionStage(): TransitionPipelineStage {
+  const engine = createTransitionDecisionEngine();
+
+  return {
+    id: 'decision',
+    purpose: 'Aggregate validation, guard, and policy results into a single decision.',
+    description: 'Produces the centralized transition decision without mutating state.',
+    run(context) {
+      const decision = engine.evaluate({
+        request: context.request,
+        transitionDefinition: context.resolvedTransition,
+        executionIdentifier: context.metadata.executionId,
+        correlationIdentifier: context.metadata.correlationId ?? context.request.correlationId,
+        transitionIdentifier: context.resolvedTransition?.id,
+        sourceState: context.currentState,
+        targetState: context.targetState,
+        requestSource: context.request.requestSource,
+        actor: context.request.actor,
+        executionContext: {
+          executionId: context.metadata.executionId,
+          requestSource: context.request.requestSource,
+          executionMode: context.request.executionMode,
+        },
+        pipelineContext: {
+          executionId: context.metadata.executionId,
+          correlationId: context.metadata.correlationId,
+          stageResults: context.metadata.stageResults,
+          requestSource: context.request.requestSource,
+        },
+        validationResult: context.validationResult,
+        guardResult: context.guardResult,
+        policyResult: context.policyResult
+          ? {
+              allowed:
+                context.policyResult.status === 'allowed' ||
+                context.policyResult.status === 'warning' ||
+                context.policyResult.status === 'pending',
+              status: context.policyResult.status,
+              identifier: context.policyResult.identifier,
+              reason: context.policyResult.reason,
+              code: context.policyResult.code,
+              metadata: context.policyResult.metadata,
+            }
+          : undefined,
+        metadata: {
+          currentState: context.currentState,
+          targetState: context.targetState,
+          resolvedTransitionId: context.resolvedTransition?.id,
+        },
+      });
+
+      return {
+        ...context,
+        decisionResult: decision,
+        metadata: {
+          ...context.metadata,
+          stageResults: {
+            ...context.metadata.stageResults,
+            decision: {
+              type: decision.decisionType,
+              reason: decision.decisionReason,
+              code: decision.failure?.code ?? 'ok',
             },
           },
         },
