@@ -1,6 +1,14 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { FeedScheduler, SchedulerRegistry, SchedulerFactory, SchedulerRuntime, ManualTrigger, CronTrigger, FixedIntervalPolicy } from '../index';
+import {
+  FeedScheduler,
+  SchedulerRegistry,
+  SchedulerFactory,
+  SchedulerRuntime,
+  ManualTrigger,
+  CronTrigger,
+  FixedIntervalPolicy,
+} from '../index';
 
 test('scheduler runtime can register and evaluate a manual trigger', async () => {
   const registry = new SchedulerRegistry();
@@ -25,11 +33,10 @@ test('scheduler runtime can register and evaluate a manual trigger', async () =>
     id: 'trigger-1',
     name: 'manual-trigger',
     feedId: 'feed-1',
-    triggerType: 'manual',
     payload: { reason: 'test' },
   });
 
-  runtime.registerScheduler(scheduler);
+  runtime.registerScheduler(scheduler as never);
   runtime.registerTrigger(trigger);
 
   const context = await runtime.evaluateTrigger('trigger-1');

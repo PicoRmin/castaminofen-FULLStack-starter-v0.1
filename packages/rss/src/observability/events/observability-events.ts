@@ -36,5 +36,5 @@ export function createObservabilityEvent(
     component: context.component,
     resource: context.resource,
     metadata: context.metadata ? Object.freeze({ ...context.metadata }) : undefined,
-  });
+  }) as ObservabilityEvent;
 }

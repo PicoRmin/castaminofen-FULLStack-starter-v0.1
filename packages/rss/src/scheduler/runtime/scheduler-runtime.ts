@@ -3,8 +3,17 @@ import type { QueueJobEnvelope } from '../../queue/contracts/queue-job-contract'
 import type { SchedulerTriggerContract } from '../contracts/scheduler-trigger-contract';
 import type { SchedulingPolicyContract } from '../contracts/scheduling-policy-contract';
 import { createSchedulerLifecycleEvent } from '../events/scheduler-events';
-import { ScheduleConflictError, TriggerDispatchError, SchedulerConfigurationError } from '../errors/scheduler-errors';
-import type { SchedulerContext, SchedulerRuntimeDependencies, SchedulerTimeProvider, SchedulerTriggerDefinition } from '../types';
+import {
+  ScheduleConflictError,
+  TriggerDispatchError,
+  SchedulerConfigurationError,
+} from '../errors/scheduler-errors';
+import type {
+  SchedulerContext,
+  SchedulerRuntimeDependencies,
+  SchedulerTimeProvider,
+  SchedulerTriggerDefinition,
+} from '../types';
 import { SystemTimeProvider } from '../types';
 import { FixedIntervalPolicy } from '../policies/scheduling-policies';
 import { ManualTrigger } from '../triggers/manual-trigger';
@@ -15,7 +24,10 @@ import { IntervalTrigger } from '../triggers/interval-trigger';
 
 export class SchedulerRuntime {
   private readonly registry = new Map<string, SchedulerTriggerContract>();
-  private readonly schedulers = new Map<string, { id: string; name: string; queueAdapter: QueueAdapter }>();
+  private readonly schedulers = new Map<
+    string,
+    { id: string; name: string; queueAdapter: QueueAdapter }
+  >();
   private readonly policies = new Map<string, SchedulingPolicyContract>();
   private readonly events: Array<ReturnType<typeof createSchedulerLifecycleEvent>> = [];
   private readonly queueAdapter: QueueAdapter;
@@ -31,13 +43,21 @@ export class SchedulerRuntime {
     this.policies.set('fixed-interval', new FixedIntervalPolicy());
   }
 
-  public registerScheduler(scheduler: { id?: string; name?: string; queueAdapter?: QueueAdapter; dependencies?: { id?: string; name?: string; queueAdapter?: QueueAdapter } }): void {
+  public registerScheduler(scheduler: {
+    id?: string;
+    name?: string;
+    queueAdapter?: QueueAdapter;
+    dependencies?: { id?: string; name?: string; queueAdapter?: QueueAdapter };
+  }): void {
     const schedulerId = scheduler.id ?? scheduler.dependencies?.id ?? 'unnamed-scheduler';
     const schedulerName = scheduler.name ?? scheduler.dependencies?.name ?? schedulerId;
-    const queueAdapter = scheduler.queueAdapter ?? scheduler.dependencies?.queueAdapter ?? this.queueAdapter;
+    const queueAdapter =
+      scheduler.queueAdapter ?? scheduler.dependencies?.queueAdapter ?? this.queueAdapter;
 
     if (!schedulerId.trim()) {
-      throw new SchedulerConfigurationError('Scheduler id is required.', { executionStage: 'registration' });
+      throw new SchedulerConfigurationError('Scheduler id is required.', {
+        executionStage: 'registration',
+      });
     }
 
     this.schedulers.set(schedulerId, {
@@ -50,7 +70,10 @@ export class SchedulerRuntime {
 
   public registerTrigger(trigger: SchedulerTriggerContract): void {
     if (this.registry.has(trigger.id)) {
-      throw new ScheduleConflictError(`Trigger already registered: ${trigger.id}`, { triggerId: trigger.id, executionStage: 'registration' });
+      throw new ScheduleConflictError(`Trigger already registered: ${trigger.id}`, {
+        triggerId: trigger.id,
+        executionStage: 'registration',
+      });
     }
 
     this.registry.set(trigger.id, trigger);
@@ -64,11 +87,19 @@ export class SchedulerRuntime {
   public async evaluateTrigger(triggerId: string): Promise<SchedulerContext> {
     const trigger = this.registry.get(triggerId);
     if (!trigger) {
-      throw new SchedulerConfigurationError(`Trigger not found: ${triggerId}`, { triggerId, executionStage: 'evaluation' });
+      throw new SchedulerConfigurationError(`Trigger not found: ${triggerId}`, {
+        triggerId,
+        executionStage: 'evaluation',
+      });
     }
 
     const policy = this.resolvePolicy(trigger.policyId);
-    const context = trigger.createContext('runtime', trigger.policyId, this.timeProvider, 'scheduled');
+    const context = trigger.createContext(
+      'runtime',
+      trigger.policyId,
+      this.timeProvider,
+      'scheduled',
+    );
     const result = trigger.evaluate(context, policy, this.timeProvider);
 
     if (!result.shouldTrigger) {
@@ -76,18 +107,30 @@ export class SchedulerRuntime {
       return context;
     }
 
-    this.emit('TriggerScheduled', { triggerId, scheduleAt: result.scheduleAt, delayMs: result.delayMs });
+    this.emit('TriggerScheduled', {
+      triggerId,
+      scheduleAt: result.scheduleAt,
+      delayMs: result.delayMs,
+    });
     return context;
   }
 
   public async dispatchTrigger(triggerId: string): Promise<boolean> {
     const trigger = this.registry.get(triggerId);
     if (!trigger) {
-      throw new SchedulerConfigurationError(`Trigger not found: ${triggerId}`, { triggerId, executionStage: 'dispatch' });
+      throw new SchedulerConfigurationError(`Trigger not found: ${triggerId}`, {
+        triggerId,
+        executionStage: 'dispatch',
+      });
     }
 
     const policy = this.resolvePolicy(trigger.policyId);
-    const context = trigger.createContext('runtime', trigger.policyId, this.timeProvider, 'dispatched');
+    const context = trigger.createContext(
+      'runtime',
+      trigger.policyId,
+      this.timeProvider,
+      'dispatched',
+    );
     const evaluation = trigger.evaluate(context, policy, this.timeProvider);
 
     try {
@@ -148,19 +191,39 @@ export class SchedulerRuntime {
   }
 
   private resolveTrigger(definition: SchedulerTriggerDefinition): SchedulerTriggerContract {
+    const triggerParams = {
+      id: definition.id,
+      name: definition.name,
+      feedId: definition.feedId,
+      correlationId: definition.correlationId,
+      policyId: definition.policyId,
+      priority: definition.priority,
+      payload: definition.payload,
+      metadata: definition.metadata,
+      nextRunAt: definition.nextRunAt,
+      scheduleName: definition.scheduleName,
+      configuration: definition.configuration as Readonly<Record<string, unknown>> | undefined,
+      expression: definition.expression,
+      timezone: definition.timezone,
+    } as const;
+
     switch (definition.triggerType) {
       case 'manual':
-        return new ManualTrigger(definition as ConstructorParameters<typeof ManualTrigger>[0]);
+        return new ManualTrigger(triggerParams as ConstructorParameters<typeof ManualTrigger>[0]);
       case 'cron':
-        return new CronTrigger(definition as ConstructorParameters<typeof CronTrigger>[0]);
+        return new CronTrigger(triggerParams as ConstructorParameters<typeof CronTrigger>[0]);
       case 'one-time':
-        return new OneTimeTrigger(definition as ConstructorParameters<typeof OneTimeTrigger>[0]);
+        return new OneTimeTrigger(triggerParams as ConstructorParameters<typeof OneTimeTrigger>[0]);
       case 'recurring':
-        return new RecurringTrigger(definition as ConstructorParameters<typeof RecurringTrigger>[0]);
+        return new RecurringTrigger(
+          triggerParams as ConstructorParameters<typeof RecurringTrigger>[0],
+        );
       case 'interval':
-        return new IntervalTrigger(definition as ConstructorParameters<typeof IntervalTrigger>[0]);
+        return new IntervalTrigger(
+          triggerParams as ConstructorParameters<typeof IntervalTrigger>[0],
+        );
       default:
-        return new ManualTrigger(definition as ConstructorParameters<typeof ManualTrigger>[0]);
+        return new ManualTrigger(triggerParams as ConstructorParameters<typeof ManualTrigger>[0]);
     }
   }
 

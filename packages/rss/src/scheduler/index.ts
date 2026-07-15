@@ -12,7 +12,13 @@ export * from './builders/trigger-builders';
 export * from './types';
 
 export abstract class BaseScheduler {
-  public constructor(protected readonly dependencies: { readonly id: string; readonly name: string; readonly queueAdapter?: import('../../queue/interfaces/queue-adapter').QueueAdapter }) {}
+  public constructor(
+    protected readonly dependencies: {
+      readonly id: string;
+      readonly name: string;
+      readonly queueAdapter?: import('../queue/interfaces/queue-adapter').QueueAdapter;
+    },
+  ) {}
 
   public async schedule(): Promise<void> {
     return Promise.resolve();
@@ -20,7 +26,11 @@ export abstract class BaseScheduler {
 }
 
 export class FeedScheduler extends BaseScheduler {
-  public constructor(dependencies: { readonly id: string; readonly name: string; readonly queueAdapter?: import('../../queue/interfaces/queue-adapter').QueueAdapter }) {
+  public constructor(dependencies: {
+    readonly id: string;
+    readonly name: string;
+    readonly queueAdapter?: import('../queue/interfaces/queue-adapter').QueueAdapter;
+  }) {
     super(dependencies);
   }
 }

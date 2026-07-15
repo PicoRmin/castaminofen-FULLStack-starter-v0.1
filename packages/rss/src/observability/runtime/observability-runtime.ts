@@ -26,13 +26,15 @@ export class ObservabilityRuntime implements ObservabilityRuntimeContract {
   private readonly collectorRegistry: MonitoringCollectorRegistry;
   private readonly diagnosticsEngine: DefaultDiagnosticsEngine;
   private readonly configuration: ObservabilityConfiguration;
-  private readonly telemetry?: {
-    readonly emitEvent?: (
-      type: string,
-      payload?: Record<string, unknown>,
-      metadata?: Record<string, unknown>,
-    ) => void;
-  };
+  private readonly telemetry?:
+    | {
+        readonly emitEvent?: (
+          type: string,
+          payload?: Record<string, unknown>,
+          metadata?: Record<string, unknown>,
+        ) => void;
+      }
+    | undefined;
 
   public constructor(dependencies: ObservabilityRuntimeDependencies = {}) {
     this.collectorRegistry = dependencies.collectorRegistry ?? {

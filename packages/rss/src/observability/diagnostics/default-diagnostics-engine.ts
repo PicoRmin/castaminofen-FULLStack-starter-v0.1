@@ -17,7 +17,7 @@ export class DefaultDiagnosticsEngine implements DiagnosticsEngine {
     const averageExecutionTimeMs = job?.executionTimeMs ?? 0;
     const workerUtilization = worker?.utilization ?? 0;
     const queueSaturation = queue?.saturation ?? 0;
-    const concurrencyLevel = worker?.count > 0 ? worker.count : 1;
+    const concurrencyLevel = (worker?.count ?? 0) > 0 ? (worker?.count ?? 1) : 1;
     const backpressureLevel = queue?.backpressure ?? 0;
     const processingThroughput = queue?.throughput ?? 0;
     const historicalTrend = processingThroughput > 0 ? processingThroughput : 0;

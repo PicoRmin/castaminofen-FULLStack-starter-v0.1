@@ -19,7 +19,9 @@ export class ObservabilityConfigurationManager {
 
   public validate(): void {
     const config = this.getConfiguration();
-    if (config.sampling < 0 || config.sampling > 1) {
+    const sampling = config.sampling ?? 1;
+    const refreshIntervalMs = config.refreshIntervalMs ?? 5_000;
+    if (sampling < 0 || sampling > 1) {
       throw new ConfigurationFailure('Sampling must be between 0 and 1.', {
         observationId: 'configuration',
         component: 'configuration',
@@ -28,7 +30,7 @@ export class ObservabilityConfigurationManager {
         recoveryRecommendation: 'Use a sampling value between 0 and 1.',
       });
     }
-    if (config.refreshIntervalMs <= 0) {
+    if (refreshIntervalMs <= 0) {
       throw new ConfigurationFailure('Refresh interval must be positive.', {
         observationId: 'configuration',
         component: 'configuration',

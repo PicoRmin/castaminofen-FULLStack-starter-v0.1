@@ -15,5 +15,5 @@ export function createSchedulerLifecycleEvent(
     timestamp: Date.now(),
     payload: Object.freeze({ ...payload }),
     metadata: metadata ? Object.freeze({ ...metadata }) : undefined,
-  });
+  }) as SchedulerLifecycleEvent;
 }

@@ -18,7 +18,7 @@ export class SnapshotBuilder {
     readonly metrics?: MonitoringSnapshot['metrics'];
     readonly telemetry?: MonitoringSnapshot['telemetry'];
     readonly diagnostics?: MonitoringSnapshot['diagnostics'];
-    readonly events?: readonly MonitoringSnapshot['events'];
+    readonly events?: MonitoringSnapshot['events'];
     readonly collectionPolicy?: CollectionPolicy;
   }): MonitoringSnapshot {
     return createObservabilitySnapshot({
@@ -35,7 +35,7 @@ export class SnapshotBuilder {
       metrics: input.metrics,
       telemetry: input.telemetry,
       diagnostics: input.diagnostics,
-      events: input.events,
+      events: input.events ?? [],
       collectionPolicy: input.collectionPolicy ?? createCollectionPolicy(),
     });
   }

@@ -20,8 +20,14 @@ export class OneTimeTrigger<TPayload = unknown> extends BaseTrigger<TPayload> {
     readonly nextRunAt?: number;
     readonly scheduleName?: string;
     readonly configuration?: Readonly<Record<string, unknown>>;
+    readonly expression?: string;
+    readonly timezone?: string;
   }) {
-    super(params);
+    super({
+      ...params,
+      expression: params.expression ?? undefined,
+      timezone: params.timezone ?? undefined,
+    });
     this.id = params.id;
     this.name = params.name;
     this.feedId = params.feedId;

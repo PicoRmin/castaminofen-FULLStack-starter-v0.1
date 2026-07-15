@@ -1,4 +1,9 @@
-import type { SchedulerContext, SchedulerPolicyEvaluationResult, SchedulerTimeProvider, SchedulerTriggerKind } from '../types';
+import type {
+  SchedulerContext,
+  SchedulerPolicyEvaluationResult,
+  SchedulerTimeProvider,
+  SchedulerTriggerKind,
+} from '../types';
 import type { SchedulingPolicyContract } from './scheduling-policy-contract';
 
 export interface SchedulerTriggerContract<TPayload = unknown> {
@@ -15,8 +20,17 @@ export interface SchedulerTriggerContract<TPayload = unknown> {
   readonly nextRunAt: number;
   readonly scheduleName: string;
   readonly configuration: Readonly<Record<string, unknown>>;
-  readonly expression?: string;
-  readonly timezone?: string;
-  evaluate(context: SchedulerContext, policy: SchedulingPolicyContract | undefined, timeProvider: SchedulerTimeProvider): SchedulerPolicyEvaluationResult;
-  createContext(schedulerId: string, policyId: string, timeProvider: SchedulerTimeProvider, state?: string): SchedulerContext;
+  readonly expression: string | undefined;
+  readonly timezone: string | undefined;
+  evaluate(
+    context: SchedulerContext,
+    policy: SchedulingPolicyContract | undefined,
+    timeProvider: SchedulerTimeProvider,
+  ): SchedulerPolicyEvaluationResult;
+  createContext(
+    schedulerId: string,
+    policyId: string,
+    timeProvider: SchedulerTimeProvider,
+    state?: string,
+  ): SchedulerContext;
 }
