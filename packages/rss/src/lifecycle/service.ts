@@ -1,4 +1,5 @@
 import { isValidFeedStatus, normalizeFeedStatus } from '../status';
+import { createTransitionCommand, TransitionCommand } from './commands';
 import {
   FeedLifecycleViolationError,
   FeedValidationRequiredError,
@@ -23,23 +24,38 @@ export class FeedLifecycleService {
     private readonly hooks?: FeedLifecycleHooks,
   ) {}
 
-  transition(request: FeedLifecycleTransitionRequest): FeedLifecycleTransitionResult {
-    const previousState = this.normalizeState(request.currentState);
-    const nextState = this.normalizeState(request.targetState);
-    const actor = request.actor ?? 'system';
-    const reason = request.reason ?? 'state-transition';
-    const timestamp = Date.now();
-    const metadata = { ...(request.metadata ?? {}) };
+  transition(request: FeedLifecycleTransitionRequest): FeedLifecycleTransitionResult;
+  transition(request: TransitionCommand): FeedLifecycleTransitionResult;
+  transition(
+    request: FeedLifecycleTransitionRequest | TransitionCommand,
+  ): FeedLifecycleTransitionResult {
+    const command =
+      request instanceof TransitionCommand
+        ? request
+        : createTransitionCommand(request as FeedLifecycleTransitionRequest);
+    const previousState = this.normalizeState(command.transition.currentState);
+    const nextState = this.normalizeState(command.transition.targetState);
+    const actor = command.actor.id;
+    const reason =
+      (command.executionContext.requestMetadata?.reason as string | undefined) ??
+      'state-transition';
+    const timestamp = command.timestamp;
+    const metadata = { ...(command.metadata.custom ?? {}) };
 
     this.logger?.info?.('lifecycle.started', {
-      feedId: request.feedId,
+      feedId: command.feed.id,
       from: previousState,
       to: nextState,
       actor,
     });
 
     const pipelineRequest: TransitionPipelineRequest = {
-      ...request,
+      feedId: command.feed.id,
+      currentState: command.transition.currentState,
+      targetState: command.transition.targetState,
+      actor: command.actor.id,
+      correlationId: command.correlationId ?? 'unknown',
+      metadata: (command.metadata.custom as Record<string, unknown> | undefined) ?? {},
       requestSource: 'feed-lifecycle-service',
       executionMode: 'sync',
     };
@@ -51,7 +67,7 @@ export class FeedLifecycleService {
       const message =
         pipelineResult.failure?.message ?? 'Transition processing pipeline rejected the request.';
       this.logger?.warn?.('lifecycle.transition.rejected', {
-        feedId: request.feedId,
+        feedId: command.feed.id,
         from: previousState,
         to: nextState,
         actor,
@@ -59,7 +75,7 @@ export class FeedLifecycleService {
         pipelineCode: pipelineResult.failure?.code,
       });
       this.hooks?.onTransitionRejected?.({
-        feedId: request.feedId,
+        feedId: command.feed.id,
         previousState,
         targetState: nextState,
         reason: message,
@@ -68,7 +84,7 @@ export class FeedLifecycleService {
         metadata,
       });
       throw new InvalidStateTransitionError(message, {
-        feedId: request.feedId,
+        feedId: command.feed.id,
         fromState: previousState,
         toState: nextState,
         pipelineCode: pipelineResult.failure?.code,
@@ -78,14 +94,14 @@ export class FeedLifecycleService {
     if (!this.isAllowedTransition(previousState, nextState)) {
       const message = `Invalid state transition from ${previousState} to ${nextState}`;
       this.logger?.warn?.('lifecycle.transition.rejected', {
-        feedId: request.feedId,
+        feedId: command.feed.id,
         from: previousState,
         to: nextState,
         actor,
         reason,
       });
       this.hooks?.onTransitionRejected?.({
-        feedId: request.feedId,
+        feedId: command.feed.id,
         previousState,
         targetState: nextState,
         reason: message,
@@ -94,26 +110,26 @@ export class FeedLifecycleService {
         metadata,
       });
       throw new InvalidStateTransitionError(message, {
-        feedId: request.feedId,
+        feedId: command.feed.id,
         fromState: previousState,
         toState: nextState,
       });
     }
 
     const transition: FeedLifecycleTransition = {
-      feedId: request.feedId,
+      feedId: command.feed.id,
       previousState,
       nextState,
       actor,
       reason,
       timestamp,
-      correlationId: request.correlationId,
+      correlationId: command.correlationId,
       metadata,
     };
 
     this.hooks?.onTransitionStarted?.(transition);
     this.logger?.info?.('lifecycle.transition', {
-      feedId: request.feedId,
+      feedId: command.feed.id,
       from: previousState,
       to: nextState,
       actor,
@@ -129,7 +145,7 @@ export class FeedLifecycleService {
       reason,
       actor,
       timestamp,
-      correlationId: request.correlationId,
+      correlationId: command.correlationId,
       metadata,
     };
   }

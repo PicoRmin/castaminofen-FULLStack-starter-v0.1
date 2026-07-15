@@ -66,6 +66,20 @@ export {
 } from './lifecycle/errors';
 export { FeedLifecycleService } from './lifecycle/service';
 export {
+  TransitionCommand,
+  createTransitionCommand,
+  type TransitionCommandActor,
+  type TransitionCommandCategory,
+  type TransitionCommandExecutionContext,
+  type TransitionCommandFeed,
+  type TransitionCommandIdentity,
+  type TransitionCommandInput,
+  type TransitionCommandMetadata,
+  type TransitionCommandSerializable,
+  type TransitionCommandTransition,
+  type TransitionCommandType,
+} from './lifecycle/commands';
+export {
   createDefaultTransitionPipeline,
   TransitionProcessingPipeline,
   type TransitionPipelineContext,

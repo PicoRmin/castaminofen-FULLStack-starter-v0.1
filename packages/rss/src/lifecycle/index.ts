@@ -1,3 +1,4 @@
+export * from './commands';
 export * from './contracts';
 export * from './errors';
 export * from './service';
@@ -7,3 +8,4 @@ export * from './validation-registry';
 export * from './guard-registry';
 export * from './pipeline';
 export * from './policy-engine';
+export * from './decision-engine';
