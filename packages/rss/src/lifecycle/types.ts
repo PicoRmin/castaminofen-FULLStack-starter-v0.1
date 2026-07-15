@@ -54,17 +54,47 @@ export interface FeedLifecycleHooks {
   }) => void | Promise<void>;
 }
 
-export type FeedLifecycleTransitionType = 'automatic' | 'administrative' | 'failure' | 'recovery';
+export type FeedLifecycleTransitionCategory =
+  | 'lifecycle'
+  | 'operational'
+  | 'administrative'
+  | 'recovery'
+  | 'failure'
+  | 'system'
+  | 'user-initiated'
+  | 'automated'
+  | 'scheduled'
+  | 'background';
+
+export type FeedLifecycleTransitionType =
+  'normal' | 'failure' | 'recovery' | 'maintenance' | 'administrative' | 'migration' | 'terminal';
+
+export type FeedLifecycleTransitionVisibility = 'public' | 'internal' | 'administrative' | 'system';
 
 export interface FeedLifecycleTransitionDefinition {
   readonly id: string;
   readonly from: FeedLifecycleState;
   readonly to: FeedLifecycleState;
-  readonly category: 'automatic' | 'administrative' | 'failure' | 'recovery';
+  readonly displayName: string;
   readonly description: string;
+  readonly category: FeedLifecycleTransitionCategory;
   readonly operationalIntent: string;
   readonly transitionType: FeedLifecycleTransitionType;
-  readonly visibility: 'internal' | 'external';
+  readonly visibility: FeedLifecycleTransitionVisibility;
+  readonly severity: 'info' | 'warning' | 'error' | 'success';
+  readonly priority: number;
+  readonly recoverable: boolean;
+  readonly terminal: boolean;
+  readonly requiresValidation: boolean;
+  readonly supportsRetry: boolean;
+  readonly supportsRecovery: boolean;
+  readonly supportsScheduling: boolean;
+  readonly supportsAutomation: boolean;
+  readonly futureEventName: string | undefined;
+  readonly futureMetricName: string | undefined;
+  readonly futureAuditName: string | undefined;
+  readonly futureNotificationName: string | undefined;
+  readonly futureQueueName: string | undefined;
 }
 
 export interface FeedLifecycleStateMetadata {
@@ -93,5 +123,5 @@ export interface FeedLifecycleStateMachine {
 
 export type FeedLifecycleTransitionRegistry = Map<
   FeedLifecycleState,
-  readonly FeedLifecycleState[]
+  readonly FeedLifecycleTransitionDefinition[]
 >;

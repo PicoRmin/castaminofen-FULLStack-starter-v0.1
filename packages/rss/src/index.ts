@@ -65,6 +65,19 @@ export {
   InvalidStateTransitionError,
 } from './lifecycle/errors';
 export { FeedLifecycleService } from './lifecycle/service';
+export {
+  getAllowedTransitions,
+  getFeedLifecycleStateDefinitions,
+  getFeedLifecycleStateMachine,
+  getFeedLifecycleStateMetadata,
+  getFeedLifecycleStateMetadataByStatus,
+  getFeedLifecycleTransitionById,
+  getFeedLifecycleTransitionCategories,
+  getFeedLifecycleTransitionDefinitions,
+  getFeedLifecycleTransitionRegistry,
+  getFeedLifecycleTransitionTypes,
+  getRecoveryTransitions,
+} from './lifecycle';
 export type {
   FeedLifecycleHooks,
   FeedLifecycleLogger,
@@ -72,11 +85,13 @@ export type {
   FeedLifecycleStateMachine,
   FeedLifecycleStateMetadata,
   FeedLifecycleTransition,
+  FeedLifecycleTransitionCategory,
   FeedLifecycleTransitionDefinition,
   FeedLifecycleTransitionRegistry,
   FeedLifecycleTransitionRequest,
   FeedLifecycleTransitionResult,
   FeedLifecycleTransitionType,
+  FeedLifecycleTransitionVisibility,
 } from './lifecycle/types';
 export {
   canBeArchived,
