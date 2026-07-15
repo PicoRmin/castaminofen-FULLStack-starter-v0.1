@@ -9,3 +9,4 @@ export * from './guard-registry';
 export * from './pipeline';
 export * from './policy-engine';
 export * from './decision-engine';
+export * from './planning-engine';
