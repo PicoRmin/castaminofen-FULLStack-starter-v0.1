@@ -14,7 +14,7 @@
   "scripts": {
     "build": "tsc -b tsconfig.json",
     "lint": "eslint . --ext .ts",
-    "test": "node --import tsx --test tests/**/*.test.ts tests/providers/**/*.test.ts"
+    "test": "node --import tsx --test tests/**/*.test.ts tests/providers/**/*.test.ts src/queue/__tests__/**/*.test.ts"
   },
   "dependencies": {
     "@castaminofen/types": "workspace:*",
