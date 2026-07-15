@@ -9,16 +9,23 @@ import { FeedsAdministrationController } from './feeds-administration.controller
 import { FeedsAdministrationService } from './feeds-administration.service';
 import { FeedsService } from './feeds.service';
 import { FeedsSynchronizationService } from './feeds-synchronization.service';
+import { FeedLifecycleService } from '@castaminofen/rss';
 
 @Module({
   imports: [PrismaModule],
-  controllers: [FeedsController, FeedsMonitoringController, FeedsOperationalController, FeedsAdministrationController],
+  controllers: [
+    FeedsController,
+    FeedsMonitoringController,
+    FeedsOperationalController,
+    FeedsAdministrationController,
+  ],
   providers: [
     FeedsService,
     FeedsSynchronizationService,
     FeedMonitoringService,
     FeedsOperationalService,
     FeedsAdministrationService,
+    FeedLifecycleService,
   ],
   exports: [
     FeedsService,

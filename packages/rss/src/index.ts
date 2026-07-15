@@ -58,3 +58,57 @@ export * from './health';
 export * from './telemetry';
 export * from './queue';
 export * from './observability';
+export {
+  FeedLifecycleError,
+  FeedLifecycleViolationError,
+  FeedValidationRequiredError,
+  InvalidStateTransitionError,
+} from './lifecycle/errors';
+export { FeedLifecycleService } from './lifecycle/service';
+export {
+  getAllowedTransitions,
+  getFeedLifecycleStateDefinitions,
+  getFeedLifecycleStateMachine,
+  getFeedLifecycleStateMetadata,
+  getFeedLifecycleStateMetadataByStatus,
+  getFeedLifecycleTransitionById,
+  getFeedLifecycleTransitionCategories,
+  getFeedLifecycleTransitionDefinitions,
+  getFeedLifecycleTransitionRegistry,
+  getFeedLifecycleTransitionTypes,
+  getRecoveryTransitions,
+} from './lifecycle';
+export type {
+  FeedLifecycleHooks,
+  FeedLifecycleLogger,
+  FeedLifecycleState,
+  FeedLifecycleStateMachine,
+  FeedLifecycleStateMetadata,
+  FeedLifecycleTransition,
+  FeedLifecycleTransitionCategory,
+  FeedLifecycleTransitionDefinition,
+  FeedLifecycleTransitionRegistry,
+  FeedLifecycleTransitionRequest,
+  FeedLifecycleTransitionResult,
+  FeedLifecycleTransitionType,
+  FeedLifecycleTransitionVisibility,
+} from './lifecycle/types';
+export {
+  canBeArchived,
+  canBeDeleted,
+  canReceiveImports,
+  canRecover,
+  canRetry,
+  canSynchronize,
+  deserializeFeedStatus,
+  getAllFeedStatusMetadata,
+  getFeedStatusMetadata,
+  getLegacyFeedStatusMappings,
+  isOperationalFeedStatus,
+  isTerminalFeedStatus,
+  isValidFeedStatus,
+  mapLegacyFeedStatus,
+  normalizeFeedStatus,
+  serializeFeedStatus,
+} from './status';
+export type { FeedStatus, FeedStatusMapping, FeedStatusMetadata } from './status';
