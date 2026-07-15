@@ -1,0 +1,22 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "rootDir": "src",
+    "outDir": "dist",
+    "composite": true,
+    "declarationMap": true,
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+    "strictPropertyInitialization": false
+  },
+  "include": ["src/**/*.ts"],
+  "exclude": ["dist", "node_modules"],
+  "references": [
+    { "path": "../../packages/core" },
+    { "path": "../../packages/config" },
+    { "path": "../../packages/logger" },
+    { "path": "../../packages/auth" },
+    { "path": "../../packages/media" },
+    { "path": "../../packages/rss" }
+  ]
+}

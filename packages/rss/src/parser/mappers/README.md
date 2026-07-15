@@ -1,0 +1,1 @@
+The mapper layer intentionally depends only on parser-domain models and existing DTO contracts. It does not read XML directly and is designed to be extended by future providers without changing the public DTOs.

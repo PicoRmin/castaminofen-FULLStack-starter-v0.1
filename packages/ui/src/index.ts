@@ -1,0 +1,19 @@
+import { PackageConfig, PackageContract } from './types';
+
+export * from './types';
+export * from './components';
+
+export class UiService implements PackageContract {
+  constructor(public readonly config: PackageConfig) {}
+
+  initialize(): string {
+    // TODO: implement package-specific initialization.
+    return `${this.config.name} initialized`;
+  }
+}
+
+export const packageMetadata = {
+  name: '@castaminofen/ui',
+  version: '0.1.0',
+  enabled: true,
+};

@@ -1,0 +1,27 @@
+{
+  "name": "@castaminofen/design-system",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -b tsconfig.json",
+    "lint": "eslint . --ext .ts",
+    "test": "echo \"No tests yet\""
+  },
+  "dependencies": {
+    "@castaminofen/ui": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.3",
+    "eslint": "^9.14.0",
+    "@types/node": "^22.10.1"
+  }
+}

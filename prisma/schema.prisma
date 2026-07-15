@@ -1,0 +1,256 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+/// Represents the synchronization state of a podcast feed imported from RSS.
+enum PodcastSyncStatus {
+  PENDING
+  IMPORTING
+  SUCCESS
+  FAILED
+  DISABLED
+}
+
+/// Represents the episode type published by podcast feeds.
+enum EpisodeType {
+  FULL
+  TRAILER
+  BONUS
+}
+
+model User {
+  id               String    @id @default(cuid())
+  email            String    @unique
+  name             String?
+  username         String?   @unique
+  passwordHash     String?
+  refreshTokenHash String?
+  role             String    @default("user")
+  avatarUrl        String?
+  bio              String?
+  emailVerifiedAt  DateTime?
+  lastLoginAt      DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  profiles         Profile[]
+  channels         Channel[]
+  playlists        Playlist[]
+  bookmarks        Bookmark[]
+  listeningHistory ListeningHistory[]
+
+  @@map("users")
+}
+
+model Profile {
+  id          String   @id @default(cuid())
+  userId      String
+  displayName String?
+  locale      String   @default("en")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@map("profiles")
+}
+
+model Channel {
+  id          String   @id @default(cuid())
+  ownerId     String
+  name        String
+  slug        String   @unique
+  description String?
+  avatarUrl   String?
+  coverUrl    String?
+  isVerified  Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  owner    User      @relation(fields: [ownerId], references: [id])
+  podcasts Podcast[]
+
+  @@map("channels")
+}
+
+model Podcast {
+  id            String            @id @default(cuid())
+  channelId     String
+  title         String
+  slug          String            @unique
+  description   String?
+  /// RSS feed URL used to import and refresh podcast metadata.
+  rssUrl        String?           @unique
+  /// Public website URL for the podcast publisher.
+  websiteUrl    String?
+  language      String?
+  imageUrl      String?
+  copyright     String?
+  author        String?
+  ownerName     String?
+  ownerEmail    String?
+  explicit      Boolean?
+  generator     String?
+  lastBuildDate DateTime?
+  lastSyncAt    DateTime?
+  syncStatus    PodcastSyncStatus @default(PENDING)
+  isActive      Boolean           @default(true)
+  categoryId    String?
+  coverUrl      String?
+  status        String            @default("draft")
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+
+  channel  Channel   @relation(fields: [channelId], references: [id])
+  category Category? @relation(fields: [categoryId], references: [id])
+  episodes Episode[]
+  tags     Tag[]
+
+  @@index([syncStatus])
+  @@index([lastSyncAt])
+  @@map("podcasts")
+}
+
+model Episode {
+  id            String       @id @default(cuid())
+  podcastId     String
+  title         String
+  slug          String       @unique
+  guid          String?      @unique
+  audioUrl      String
+  coverUrl      String?
+  description   String?
+  /// Short summary used by podcast feed consumers.
+  summary       String?
+  audioMimeType String?
+  audioLength   Int?
+  imageUrl      String?
+  season        Int?
+  episode       Int?
+  episodeType   EpisodeType?
+  explicit      Boolean?
+  durationSec   Int?
+  chapterJson   String?
+  status        String       @default("draft")
+  publishedAt   DateTime?
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  podcast   Podcast            @relation(fields: [podcastId], references: [id])
+  tags      Tag[]
+  bookmarks Bookmark[]
+  history   ListeningHistory[]
+
+  @@index([publishedAt])
+  @@index([podcastId])
+  @@map("episodes")
+}
+
+model Category {
+  id       String    @id @default(cuid())
+  name     String    @unique
+  slug     String    @unique
+  podcasts Podcast[]
+
+  @@map("categories")
+}
+
+model Tag {
+  id       String    @id @default(cuid())
+  name     String    @unique
+  slug     String    @unique
+  podcasts Podcast[]
+  episodes Episode[]
+
+  @@map("tags")
+}
+
+model SearchSynonym {
+  id        String   @id @default(cuid())
+  source    String
+  target    String
+  createdAt DateTime @default(now())
+
+  @@index([source])
+  @@index([target])
+  @@map("search_synonyms")
+}
+
+model SearchRecentQuery {
+  id        String   @id @default(cuid())
+  userId    String?
+  query     String
+  createdAt DateTime @default(now())
+
+  @@unique([userId, query])
+  @@index([userId])
+  @@map("search_recent_queries")
+}
+
+model SearchAnalyticsEvent {
+  id           String   @id @default(cuid())
+  query        String
+  resultsCount Int
+  source       String?
+  userId       String?
+  filters      Json?
+  createdAt    DateTime @default(now())
+
+  @@index([createdAt])
+  @@map("search_analytics_events")
+}
+
+model Playlist {
+  id        String   @id @default(cuid())
+  userId    String
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@map("playlists")
+}
+
+model Bookmark {
+  id        String   @id @default(cuid())
+  userId    String
+  episodeId String
+  createdAt DateTime @default(now())
+
+  user    User    @relation(fields: [userId], references: [id])
+  episode Episode @relation(fields: [episodeId], references: [id])
+
+  @@map("bookmarks")
+}
+
+model ListeningHistory {
+  id        String   @id @default(cuid())
+  userId    String
+  episodeId String
+  position  Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user    User    @relation(fields: [userId], references: [id])
+  episode Episode @relation(fields: [episodeId], references: [id])
+
+  @@map("listening_history")
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  title     String
+  message   String
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("notifications")
+}

@@ -1,0 +1,29 @@
+{
+  "name": "@castaminofen/rss",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -b tsconfig.json",
+    "lint": "eslint . --ext .ts",
+    "test": "node --import tsx --test tests/**/*.test.ts tests/providers/**/*.test.ts"
+  },
+  "dependencies": {
+    "@castaminofen/types": "workspace:*",
+    "sax": "1.6.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.1",
+    "@types/sax": "1.2.7",
+    "eslint": "^9.14.0",
+    "typescript": "^5.6.3"
+  }
+}

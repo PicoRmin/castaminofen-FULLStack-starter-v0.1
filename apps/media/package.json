@@ -1,0 +1,24 @@
+{
+  "name": "@castaminofen/app-media",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsc -b tsconfig.json",
+    "dev": "tsx src/index.ts",
+    "start": "node dist/index.js",
+    "lint": "eslint . --ext .ts",
+    "test": "echo \"No tests yet\""
+  },
+  "dependencies": {
+    "@castaminofen/core": "workspace:*",
+    "@castaminofen/config": "workspace:*",
+    "@castaminofen/logger": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.3",
+    "tsx": "^4.19.3",
+    "eslint": "^9.14.0",
+    "@types/node": "^22.10.1"
+  }
+}
