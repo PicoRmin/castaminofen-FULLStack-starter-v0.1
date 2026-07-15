@@ -4,8 +4,8 @@ import {
   FeedValidationRequiredError,
   InvalidStateTransitionError,
 } from './errors';
-import { evaluateTransitionGuards } from './guard-registry';
 import { getFeedLifecycleStateMachine, getFeedLifecycleTransitionRegistry } from './registry';
+import { createDefaultTransitionPipeline, type TransitionPipelineRequest } from './pipeline';
 import type {
   FeedLifecycleHooks,
   FeedLifecycleLogger,
@@ -14,9 +14,10 @@ import type {
   FeedLifecycleTransitionRequest,
   FeedLifecycleTransitionResult,
 } from './types';
-import { validateTransitionRequest } from './validation-registry';
 
 export class FeedLifecycleService {
+  private readonly pipeline = createDefaultTransitionPipeline();
+
   constructor(
     private readonly logger?: FeedLifecycleLogger,
     private readonly hooks?: FeedLifecycleHooks,
@@ -37,44 +38,25 @@ export class FeedLifecycleService {
       actor,
     });
 
-    const validationResult = validateTransitionRequest(request);
-    if (!validationResult.success) {
-      const message = validationResult.reason;
-      this.logger?.warn?.('lifecycle.transition.rejected', {
-        feedId: request.feedId,
-        from: previousState,
-        to: nextState,
-        actor,
-        reason,
-        validationCode: validationResult.code,
-      });
-      this.hooks?.onTransitionRejected?.({
-        feedId: request.feedId,
-        previousState,
-        targetState: nextState,
-        reason: message,
-        actor,
-        timestamp,
-        metadata,
-      });
-      throw new InvalidStateTransitionError(message, {
-        feedId: request.feedId,
-        fromState: previousState,
-        toState: nextState,
-        validationCode: validationResult.code,
-      });
-    }
+    const pipelineRequest: TransitionPipelineRequest = {
+      ...request,
+      requestSource: 'feed-lifecycle-service',
+      executionMode: 'sync',
+    };
 
-    const guardResult = evaluateTransitionGuards(request);
-    if (!guardResult.allowed) {
-      const message = guardResult.reason;
+    const pipelineResult = this.pipeline.execute(pipelineRequest);
+    const context = pipelineResult.context;
+
+    if (pipelineResult.status !== 'success') {
+      const message =
+        pipelineResult.failure?.message ?? 'Transition processing pipeline rejected the request.';
       this.logger?.warn?.('lifecycle.transition.rejected', {
         feedId: request.feedId,
         from: previousState,
         to: nextState,
         actor,
         reason,
-        guardCode: guardResult.code,
+        pipelineCode: pipelineResult.failure?.code,
       });
       this.hooks?.onTransitionRejected?.({
         feedId: request.feedId,
@@ -89,7 +71,7 @@ export class FeedLifecycleService {
         feedId: request.feedId,
         fromState: previousState,
         toState: nextState,
-        guardCode: guardResult.code,
+        pipelineCode: pipelineResult.failure?.code,
       });
     }
 
@@ -138,6 +120,7 @@ export class FeedLifecycleService {
       to: nextState,
       actor,
       reason,
+      pipelineExecutionId: context.metadata.executionId,
     });
     this.hooks?.onTransitionCompleted?.(transition);
 
