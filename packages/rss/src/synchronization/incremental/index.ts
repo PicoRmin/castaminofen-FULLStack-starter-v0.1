@@ -167,35 +167,35 @@ export class IncrementalSynchronizationEngine {
       request: {
         feedId: request.feedId,
         feedUrl: request.feedUrl,
-        correlationId: request.correlationId,
-        metadata: request.metadata,
+        ...(request.correlationId !== undefined ? { correlationId: request.correlationId } : {}),
+        ...(request.metadata !== undefined ? { metadata: request.metadata } : {}),
       },
       previousSnapshot,
       currentSnapshot: conditionalResponse.snapshot ?? this.toSnapshot(state, checkpoint),
-      previousCheckpoint: checkpoint
+      ...(checkpoint
         ? {
-            ...(checkpoint.id !== undefined ? { id: checkpoint.id } : {}),
-            ...(checkpoint.etag !== undefined ? { etag: checkpoint.etag } : {}),
-            ...(checkpoint.lastModified !== undefined ? { lastModified: checkpoint.lastModified } : {}),
-            ...(checkpoint.feedHash !== undefined ? { feedHash: checkpoint.feedHash } : {}),
-            ...(checkpoint.snapshotHash !== undefined ? { snapshotHash: checkpoint.snapshotHash } : {}),
-            ...(checkpoint.episodeCount !== undefined ? { episodeCount: checkpoint.episodeCount } : {}),
-            ...(checkpoint.metadata !== undefined ? { metadata: checkpoint.metadata } : {}),
-            ...(checkpoint.version !== undefined ? { version: checkpoint.version } : {}),
+            previousCheckpoint: {
+              ...(checkpoint.id !== undefined ? { id: checkpoint.id } : {}),
+              ...(checkpoint.etag !== undefined ? { etag: checkpoint.etag } : {}),
+              ...(checkpoint.lastModified !== undefined ? { lastModified: checkpoint.lastModified } : {}),
+              ...(checkpoint.feedHash !== undefined ? { feedHash: checkpoint.feedHash } : {}),
+              ...(checkpoint.snapshotHash !== undefined ? { snapshotHash: checkpoint.snapshotHash } : {}),
+              ...(checkpoint.episodeCount !== undefined ? { episodeCount: checkpoint.episodeCount } : {}),
+              ...(checkpoint.metadata !== undefined ? { metadata: checkpoint.metadata } : {}),
+              ...(checkpoint.version !== undefined ? { version: checkpoint.version } : {}),
+            },
+            currentCheckpoint: {
+              ...(checkpoint.id !== undefined ? { id: checkpoint.id } : {}),
+              ...(checkpoint.etag !== undefined ? { etag: checkpoint.etag } : {}),
+              ...(checkpoint.lastModified !== undefined ? { lastModified: checkpoint.lastModified } : {}),
+              ...(checkpoint.feedHash !== undefined ? { feedHash: checkpoint.feedHash } : {}),
+              ...(checkpoint.snapshotHash !== undefined ? { snapshotHash: checkpoint.snapshotHash } : {}),
+              ...(checkpoint.episodeCount !== undefined ? { episodeCount: checkpoint.episodeCount } : {}),
+              ...(checkpoint.metadata !== undefined ? { metadata: checkpoint.metadata } : {}),
+              ...(checkpoint.version !== undefined ? { version: checkpoint.version } : {}),
+            },
           }
-        : undefined,
-      currentCheckpoint: checkpoint
-        ? {
-            ...(checkpoint.id !== undefined ? { id: checkpoint.id } : {}),
-            ...(checkpoint.etag !== undefined ? { etag: checkpoint.etag } : {}),
-            ...(checkpoint.lastModified !== undefined ? { lastModified: checkpoint.lastModified } : {}),
-            ...(checkpoint.feedHash !== undefined ? { feedHash: checkpoint.feedHash } : {}),
-            ...(checkpoint.snapshotHash !== undefined ? { snapshotHash: checkpoint.snapshotHash } : {}),
-            ...(checkpoint.episodeCount !== undefined ? { episodeCount: checkpoint.episodeCount } : {}),
-            ...(checkpoint.metadata !== undefined ? { metadata: checkpoint.metadata } : {}),
-            ...(checkpoint.version !== undefined ? { version: checkpoint.version } : {}),
-          }
-        : undefined,
+        : {}),
       state,
     })) ?? { differences: [], warnings: [], errors: [], hasChanges: false, summary: {} };
     if (comparisonResult.errors.length > 0) {

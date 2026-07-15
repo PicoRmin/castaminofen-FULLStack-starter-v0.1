@@ -24,9 +24,11 @@ export class DefaultTelemetryMetricAggregator implements TelemetryMetricAggregat
     const count = values.length;
     const average = sum / count;
     const min = values[0] ?? 0;
-    const max = values[count - 1] ?? 0;
-    const latest = values[count - 1] ?? 0;
-    const windowSeconds = Math.max(1, Math.ceil((values[count - 1] - values[0]) / 1000));
+    const first = values[0] ?? 0;
+    const last = values[count - 1] ?? first;
+    const max = last;
+    const latest = last;
+    const windowSeconds = Math.max(1, Math.ceil((last - first) / 1000));
     const rate = count / windowSeconds;
     const metadata = samples.at(-1)?.metadata;
 
@@ -55,6 +57,9 @@ export class DefaultTelemetryMetricAggregator implements TelemetryMetricAggregat
     }
 
     const aggregate = snapshots[0];
+    if (!aggregate) {
+      return undefined;
+    }
     return Object.freeze({
       name: aggregate.name,
       kind: aggregate.kind,

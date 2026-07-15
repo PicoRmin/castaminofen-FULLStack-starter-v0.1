@@ -29,10 +29,10 @@ export interface TelemetrySpan {
   readonly id: string;
   readonly traceId: string;
   readonly operationId: string;
-  readonly parentSpanId?: string;
+  readonly parentSpanId?: string | undefined;
   readonly name: string;
   readonly startTime: number;
-  readonly endTime?: number;
+  readonly endTime?: number | undefined;
   readonly status: 'ok' | 'error' | 'pending';
   end(): TelemetrySpan;
   recordMetric(name: string, value: number, metadata?: TelemetryMetadata): void;

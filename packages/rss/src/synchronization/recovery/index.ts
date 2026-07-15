@@ -19,7 +19,7 @@ import type {
   RecoveryPolicyId,
   RetryPolicyId,
 } from '../types';
-import type { RecoveryLifecycleHooks } from '../events';
+import type { RecoveryLifecycleHooks } from '../events/recovery';
 
 export interface SynchronizationRecoveryEngineEvaluationRequest {
   readonly feedId: string;

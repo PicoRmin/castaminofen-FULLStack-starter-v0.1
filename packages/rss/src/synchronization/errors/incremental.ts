@@ -1,19 +1,19 @@
 export interface IncrementalErrorDetails {
   readonly errorCode: string;
   readonly stage: string;
-  readonly feedId?: string;
-  readonly checkpointId?: string;
-  readonly context?: Record<string, unknown>;
-  readonly recoveryRecommendation?: string;
+  readonly feedId?: string | undefined;
+  readonly checkpointId?: string | undefined;
+  readonly context?: Record<string, unknown> | undefined;
+  readonly recoveryRecommendation?: string | undefined;
 }
 
 export class IncrementalSynchronizationError extends Error implements IncrementalErrorDetails {
   public readonly errorCode: string;
   public readonly stage: string;
-  public readonly feedId?: string;
-  public readonly checkpointId?: string;
-  public readonly context?: Record<string, unknown>;
-  public readonly recoveryRecommendation?: string;
+  public readonly feedId: string | undefined;
+  public readonly checkpointId: string | undefined;
+  public readonly context: Record<string, unknown> | undefined;
+  public readonly recoveryRecommendation: string | undefined;
 
   public constructor(message: string, details: IncrementalErrorDetails) {
     super(message);
