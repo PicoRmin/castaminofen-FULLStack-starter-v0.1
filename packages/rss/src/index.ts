@@ -57,3 +57,4 @@ export * from './synchronization';
 export * from './health';
 export * from './telemetry';
 export * from './queue';
+export * from './observability';
