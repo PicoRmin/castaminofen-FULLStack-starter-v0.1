@@ -1,3 +1,4 @@
+import { isValidFeedStatus, normalizeFeedStatus } from '../status';
 import {
   FeedLifecycleViolationError,
   FeedValidationRequiredError,
@@ -232,26 +233,9 @@ export class FeedLifecycleService {
   }
 
   private normalizeState(state: FeedLifecycleState | string): FeedLifecycleState {
-    const normalized = state.toUpperCase();
-    const supported = [
-      'NEW',
-      'REGISTERED',
-      'VALIDATING',
-      'VALIDATION_FAILED',
-      'READY',
-      'IMPORTING',
-      'IMPORT_FAILED',
-      'ACTIVE',
-      'SYNCING',
-      'SYNC_FAILED',
-      'PAUSED',
-      'DISABLED',
-      'ARCHIVED',
-      'DELETED',
-    ];
-    if (!supported.includes(normalized)) {
+    if (!isValidFeedStatus(state)) {
       throw new FeedLifecycleViolationError(`Unsupported lifecycle state ${state}`, { state });
     }
-    return normalized as FeedLifecycleState;
+    return normalizeFeedStatus(state) as FeedLifecycleState;
   }
 }

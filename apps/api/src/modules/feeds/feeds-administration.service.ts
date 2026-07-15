@@ -1,5 +1,10 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { FeedLifecycleService } from '@castaminofen/rss';
+import {
+  FeedLifecycleService,
+  mapLegacyFeedStatus,
+  normalizeFeedStatus,
+  serializeFeedStatus,
+} from '@castaminofen/rss';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import type { UpdateFeedDto } from './dto/administration-request.dto';
 import type { UpdateConfigurationDto } from './dto/administration-request.dto';
@@ -332,19 +337,22 @@ export class FeedsAdministrationService {
   }
 
   private mapFeedState(record: { isActive: boolean; status: string; syncStatus?: string }): string {
-    if (record.status === 'archived') {
+    const normalizedStatus = normalizeFeedStatus(record.status ?? 'NEW');
+    const normalizedSyncStatus = serializeFeedStatus(record.syncStatus ?? '');
+
+    if (normalizedStatus === 'ARCHIVED') {
       return 'ARCHIVED';
     }
 
-    if (record.status === 'deleted') {
+    if (normalizedStatus === 'DELETED') {
       return 'DELETED';
     }
 
-    if (record.syncStatus === 'IMPORTING') {
+    if (normalizedSyncStatus === 'IMPORTING') {
       return 'IMPORTING';
     }
 
-    if (record.syncStatus === 'FAILED') {
+    if (normalizedSyncStatus === 'FAILED') {
       return 'SYNC_FAILED';
     }
 

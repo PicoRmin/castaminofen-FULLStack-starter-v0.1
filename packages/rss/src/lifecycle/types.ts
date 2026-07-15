@@ -1,18 +1,6 @@
-export type FeedLifecycleState =
-  | 'NEW'
-  | 'REGISTERED'
-  | 'VALIDATING'
-  | 'VALIDATION_FAILED'
-  | 'READY'
-  | 'IMPORTING'
-  | 'IMPORT_FAILED'
-  | 'ACTIVE'
-  | 'SYNCING'
-  | 'SYNC_FAILED'
-  | 'PAUSED'
-  | 'DISABLED'
-  | 'ARCHIVED'
-  | 'DELETED';
+import type { FeedStatus } from '../status';
+
+export type FeedLifecycleState = FeedStatus;
 
 export interface FeedLifecycleTransitionRequest {
   readonly feedId: string;
@@ -31,7 +19,7 @@ export interface FeedLifecycleTransition {
   readonly actor: string;
   readonly reason: string;
   readonly timestamp: number;
-  readonly correlationId?: string;
+  readonly correlationId: string | undefined;
   readonly metadata: Record<string, unknown>;
 }
 
@@ -42,7 +30,7 @@ export interface FeedLifecycleTransitionResult {
   readonly reason: string;
   readonly actor: string;
   readonly timestamp: number;
-  readonly correlationId?: string;
+  readonly correlationId: string | undefined;
   readonly metadata: Record<string, unknown>;
 }
 
