@@ -10,7 +10,7 @@
     "strictPropertyInitialization": false
   },
   "include": ["src/**/*.ts"],
-  "exclude": ["dist", "node_modules"],
+  "exclude": ["dist", "node_modules", "src/**/*.spec.ts", "src/**/*.test.ts"],
   "references": [
     { "path": "../../packages/core" },
     { "path": "../../packages/config" },
