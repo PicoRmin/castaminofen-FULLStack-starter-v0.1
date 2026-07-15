@@ -4,6 +4,7 @@ import {
   FeedValidationRequiredError,
   InvalidStateTransitionError,
 } from './errors';
+import { evaluateTransitionGuards } from './guard-registry';
 import { getFeedLifecycleStateMachine, getFeedLifecycleTransitionRegistry } from './registry';
 import type {
   FeedLifecycleHooks,
@@ -13,6 +14,7 @@ import type {
   FeedLifecycleTransitionRequest,
   FeedLifecycleTransitionResult,
 } from './types';
+import { validateTransitionRequest } from './validation-registry';
 
 export class FeedLifecycleService {
   constructor(
@@ -34,6 +36,62 @@ export class FeedLifecycleService {
       to: nextState,
       actor,
     });
+
+    const validationResult = validateTransitionRequest(request);
+    if (!validationResult.success) {
+      const message = validationResult.reason;
+      this.logger?.warn?.('lifecycle.transition.rejected', {
+        feedId: request.feedId,
+        from: previousState,
+        to: nextState,
+        actor,
+        reason,
+        validationCode: validationResult.code,
+      });
+      this.hooks?.onTransitionRejected?.({
+        feedId: request.feedId,
+        previousState,
+        targetState: nextState,
+        reason: message,
+        actor,
+        timestamp,
+        metadata,
+      });
+      throw new InvalidStateTransitionError(message, {
+        feedId: request.feedId,
+        fromState: previousState,
+        toState: nextState,
+        validationCode: validationResult.code,
+      });
+    }
+
+    const guardResult = evaluateTransitionGuards(request);
+    if (!guardResult.allowed) {
+      const message = guardResult.reason;
+      this.logger?.warn?.('lifecycle.transition.rejected', {
+        feedId: request.feedId,
+        from: previousState,
+        to: nextState,
+        actor,
+        reason,
+        guardCode: guardResult.code,
+      });
+      this.hooks?.onTransitionRejected?.({
+        feedId: request.feedId,
+        previousState,
+        targetState: nextState,
+        reason: message,
+        actor,
+        timestamp,
+        metadata,
+      });
+      throw new InvalidStateTransitionError(message, {
+        feedId: request.feedId,
+        fromState: previousState,
+        toState: nextState,
+        guardCode: guardResult.code,
+      });
+    }
 
     if (!this.isAllowedTransition(previousState, nextState)) {
       const message = `Invalid state transition from ${previousState} to ${nextState}`;
