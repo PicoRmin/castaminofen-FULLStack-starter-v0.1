@@ -106,6 +106,20 @@ export {
   UnsupportedStrategy,
 } from './lifecycle/planning-engine';
 export {
+  TransitionExecutionCoordinator,
+  type TransitionExecutionCancellationContext,
+  type TransitionExecutionContext,
+  type TransitionExecutionCoordinatorDependencies,
+  type TransitionExecutionFailure,
+  type TransitionExecutionHooks,
+  type TransitionExecutionLifecycleService,
+  type TransitionExecutionResult,
+  type TransitionExecutionScope,
+  type TransitionExecutionStatus,
+  type TransitionExecutionTimeoutContext,
+  type TransitionExecutionTransactionContext,
+} from './lifecycle/coordinator';
+export {
   getAllowedTransitions,
   getFeedLifecycleStateDefinitions,
   getFeedLifecycleStateMachine,

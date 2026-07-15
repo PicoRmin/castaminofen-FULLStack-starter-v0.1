@@ -115,14 +115,19 @@ export class RegistryFailure extends TransitionPipelineFailure {
 
 export class ValidationFailure extends TransitionPipelineFailure {
   constructor(message: string, details: Record<string, unknown> = {}) {
-    super(message, 'validation-failure', 'validation', details);
+    super(
+      message,
+      (details.code as string | undefined) ?? 'validation-failure',
+      'validation',
+      details,
+    );
     this.name = 'ValidationFailure';
   }
 }
 
 export class GuardFailure extends TransitionPipelineFailure {
   constructor(message: string, details: Record<string, unknown> = {}) {
-    super(message, 'guard-failure', 'guard', details);
+    super(message, (details.code as string | undefined) ?? 'guard-failure', 'guard', details);
     this.name = 'GuardFailure';
   }
 }

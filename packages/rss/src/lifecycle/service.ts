@@ -6,7 +6,7 @@ import {
   InvalidStateTransitionError,
 } from './errors';
 import { getFeedLifecycleStateMachine } from './registry';
-import { createDefaultTransitionPipeline, type TransitionPipelineRequest } from './pipeline';
+import { TransitionExecutionCoordinator } from './coordinator';
 import type {
   FeedLifecycleHooks,
   FeedLifecycleLogger,
@@ -17,16 +17,50 @@ import type {
 } from './types';
 
 export class FeedLifecycleService {
-  private readonly pipeline = createDefaultTransitionPipeline();
+  private readonly coordinator: TransitionExecutionCoordinator;
 
   constructor(
     private readonly logger?: FeedLifecycleLogger,
     private readonly hooks?: FeedLifecycleHooks,
-  ) {}
+  ) {
+    this.coordinator = new TransitionExecutionCoordinator({
+      lifecycleService: this,
+      logger,
+    });
+  }
 
   transition(request: FeedLifecycleTransitionRequest): FeedLifecycleTransitionResult;
   transition(request: TransitionCommand): FeedLifecycleTransitionResult;
   transition(
+    request: FeedLifecycleTransitionRequest | TransitionCommand,
+  ): FeedLifecycleTransitionResult {
+    const result = this.coordinator.execute(request);
+
+    if (result.status !== 'success' || !result.executionResult) {
+      const message = result.failure?.message ?? 'Transition execution failed.';
+      this.logger?.warn?.('lifecycle.transition.rejected', {
+        executionId: result.context.executionId,
+        failureCode: result.failure?.code,
+      });
+      this.hooks?.onTransitionRejected?.({
+        feedId: request instanceof TransitionCommand ? request.feed.id : request.feedId,
+        previousState: 'UNKNOWN' as FeedLifecycleState,
+        targetState: 'UNKNOWN' as FeedLifecycleState,
+        reason: message,
+        actor: request instanceof TransitionCommand ? request.actor.id : 'system',
+        timestamp: Date.now(),
+        metadata: {},
+      });
+      throw new InvalidStateTransitionError(message, {
+        executionId: result.context.executionId,
+        failureCode: result.failure?.code,
+      });
+    }
+
+    return result.executionResult;
+  }
+
+  executeTransition(
     request: FeedLifecycleTransitionRequest | TransitionCommand,
   ): FeedLifecycleTransitionResult {
     const command =
@@ -48,48 +82,6 @@ export class FeedLifecycleService {
       to: nextState,
       actor,
     });
-
-    const pipelineRequest: TransitionPipelineRequest = {
-      feedId: command.feed.id,
-      currentState: command.transition.currentState,
-      targetState: command.transition.targetState,
-      actor: command.actor.id,
-      correlationId: command.correlationId ?? 'unknown',
-      metadata: (command.metadata.custom as Record<string, unknown> | undefined) ?? {},
-      requestSource: 'feed-lifecycle-service',
-      executionMode: 'sync',
-    };
-
-    const pipelineResult = this.pipeline.execute(pipelineRequest);
-    const context = pipelineResult.context;
-
-    if (pipelineResult.status !== 'success') {
-      const message =
-        pipelineResult.failure?.message ?? 'Transition processing pipeline rejected the request.';
-      this.logger?.warn?.('lifecycle.transition.rejected', {
-        feedId: command.feed.id,
-        from: previousState,
-        to: nextState,
-        actor,
-        reason,
-        pipelineCode: pipelineResult.failure?.code,
-      });
-      this.hooks?.onTransitionRejected?.({
-        feedId: command.feed.id,
-        previousState,
-        targetState: nextState,
-        reason: message,
-        actor,
-        timestamp,
-        metadata,
-      });
-      throw new InvalidStateTransitionError(message, {
-        feedId: command.feed.id,
-        fromState: previousState,
-        toState: nextState,
-        pipelineCode: pipelineResult.failure?.code,
-      });
-    }
 
     if (!this.isAllowedTransition(previousState, nextState)) {
       const message = `Invalid state transition from ${previousState} to ${nextState}`;
@@ -134,7 +126,7 @@ export class FeedLifecycleService {
       to: nextState,
       actor,
       reason,
-      pipelineExecutionId: context.metadata.executionId,
+      pipelineExecutionId: command.executionId ?? command.id,
     });
     this.hooks?.onTransitionCompleted?.(transition);
 
