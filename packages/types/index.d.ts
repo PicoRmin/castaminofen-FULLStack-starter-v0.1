@@ -98,7 +98,8 @@ declare module '@castaminofen/types' {
   }
 
   export class TypesService implements PackageContract {
-    constructor(public readonly config: PackageConfig);
+    readonly config: PackageConfig;
+    constructor(config: PackageConfig);
     initialize(): string;
   }
 
