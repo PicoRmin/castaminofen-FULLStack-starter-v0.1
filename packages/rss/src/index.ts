@@ -88,6 +88,38 @@ export {
   type TransitionPipelineStage,
 } from './lifecycle/pipeline';
 export {
+  createTransitionExecutionPlanningEngine,
+  type ExecutionPlanDependency,
+  type ExecutionPlanMode,
+  type ExecutionPlanStage,
+  type ExecutionPlanStrategy,
+  type TransitionExecutionPlan,
+  type TransitionExecutionPlanningContext,
+  type TransitionExecutionPlanningInput,
+  type TransitionExecutionPlanningResult,
+  MissingCommand,
+  MissingDecision,
+  MissingExecutionContext,
+  MissingTransition,
+  PlanningConfigurationFailure,
+  PlanningFailure,
+  UnsupportedStrategy,
+} from './lifecycle/planning-engine';
+export {
+  TransitionExecutionCoordinator,
+  type TransitionExecutionCancellationContext,
+  type TransitionExecutionContext,
+  type TransitionExecutionCoordinatorDependencies,
+  type TransitionExecutionFailure,
+  type TransitionExecutionHooks,
+  type TransitionExecutionLifecycleService,
+  type TransitionExecutionResult,
+  type TransitionExecutionScope,
+  type TransitionExecutionStatus,
+  type TransitionExecutionTimeoutContext,
+  type TransitionExecutionTransactionContext,
+} from './lifecycle/coordinator';
+export {
   getAllowedTransitions,
   getFeedLifecycleStateDefinitions,
   getFeedLifecycleStateMachine,

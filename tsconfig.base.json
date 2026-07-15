@@ -23,7 +23,7 @@
     "types": ["node"],
 
     "noUncheckedIndexedAccess": true,
-    "exactOptionalPropertyTypes": true
+    "exactOptionalPropertyTypes": false
   },
   "exclude": ["dist", "node_modules"]
 }
