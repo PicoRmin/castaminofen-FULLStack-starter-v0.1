@@ -4,7 +4,7 @@ import {
   FeedValidationRequiredError,
   InvalidStateTransitionError,
 } from './errors';
-import { getFeedLifecycleStateMachine, getFeedLifecycleTransitionRegistry } from './registry';
+import { getFeedLifecycleStateMachine } from './registry';
 import { createDefaultTransitionPipeline, type TransitionPipelineRequest } from './pipeline';
 import type {
   FeedLifecycleHooks,
@@ -100,8 +100,6 @@ export class FeedLifecycleService {
       });
     }
 
-    this.validateBusinessRules(previousState, nextState, request.feedId);
-
     const transition: FeedLifecycleTransition = {
       feedId: request.feedId,
       previousState,
@@ -186,75 +184,6 @@ export class FeedLifecycleService {
     nextState: FeedLifecycleState,
   ): boolean {
     return getFeedLifecycleStateMachine().canTransition(previousState, nextState);
-  }
-
-  private validateBusinessRules(
-    previousState: FeedLifecycleState,
-    nextState: FeedLifecycleState,
-    feedId: string,
-  ): void {
-    if (previousState === 'DELETED' || nextState === 'DELETED') {
-      if (previousState === 'DELETED' && nextState !== 'DELETED') {
-        throw new FeedLifecycleViolationError('Deleted feeds cannot transition.', {
-          feedId,
-          fromState: previousState,
-          toState: nextState,
-        });
-      }
-    }
-
-    if (previousState === 'ARCHIVED' && nextState !== 'DELETED' && nextState !== 'ACTIVE') {
-      throw new FeedLifecycleViolationError(
-        'Archived feeds cannot transition except to active or deleted.',
-        { feedId, fromState: previousState, toState: nextState },
-      );
-    }
-
-    if (nextState === 'SYNCING' && !this.canSynchronize(previousState)) {
-      throw new FeedLifecycleViolationError(
-        'Feed cannot synchronize before successful validation and activation.',
-        { feedId, fromState: previousState, toState: nextState },
-      );
-    }
-
-    if (nextState === 'IMPORTING' && !this.canImport(previousState)) {
-      throw new FeedLifecycleViolationError('Feed cannot import from the current state.', {
-        feedId,
-        fromState: previousState,
-        toState: nextState,
-      });
-    }
-
-    if (nextState === 'ACTIVE' && previousState === 'VALIDATION_FAILED') {
-      throw new FeedValidationRequiredError(
-        'A failed feed cannot become active without recovery.',
-        { feedId, fromState: previousState, toState: nextState },
-      );
-    }
-
-    if (nextState === 'ACTIVE' && previousState === 'IMPORT_FAILED') {
-      throw new FeedValidationRequiredError(
-        'A failed import feed cannot become active without recovery.',
-        { feedId, fromState: previousState, toState: nextState },
-      );
-    }
-
-    if (nextState === 'ACTIVE' && previousState === 'SYNC_FAILED') {
-      throw new FeedValidationRequiredError(
-        'A failed synchronization feed cannot become active without recovery.',
-        { feedId, fromState: previousState, toState: nextState },
-      );
-    }
-
-    if (['DISABLED', 'PAUSED', 'ARCHIVED', 'DELETED'].includes(previousState)) {
-      if (nextState === 'SYNCING') {
-        throw new FeedLifecycleViolationError('This feed is not eligible for synchronization.', {
-          feedId,
-          fromState: previousState,
-          toState: nextState,
-        });
-      }
-    }
   }
 
   private normalizeState(state: FeedLifecycleState | string): FeedLifecycleState {

@@ -3,6 +3,7 @@ import { randomUUID } from 'node:crypto';
 import { normalizeFeedStatus } from '../status';
 import { evaluateTransitionGuards } from './guard-registry';
 import { getFeedLifecycleTransitionById } from './registry';
+import { createLifecyclePolicyEngine, type LifecyclePolicyEvaluationInput } from './policy-engine';
 import type {
   FeedLifecycleState,
   FeedLifecycleTransitionDefinition,
@@ -68,7 +69,7 @@ export interface TransitionPipelineResult {
 }
 
 export interface TransitionPolicyResult {
-  readonly status: 'pending' | 'skipped' | 'completed';
+  readonly status: 'allowed' | 'rejected' | 'deferred' | 'warning' | 'pending';
   readonly identifier: string;
   readonly reason: string;
   readonly code: string;
@@ -443,21 +444,77 @@ function createGuardStage(): TransitionPipelineStage {
 }
 
 function createPolicyStage(): TransitionPipelineStage {
+  const engine = createLifecyclePolicyEngine();
+
   return {
     id: 'policy',
-    purpose: 'Reserve the extension point for future policy evaluation.',
-    description: 'Current implementation is a placeholder that preserves the pipeline contract.',
+    purpose: 'Evaluate lifecycle policies before execution proceeds.',
+    description: 'Runs the centralized lifecycle policy engine for business-rule evaluation.',
     run(context) {
+      const policyInput: LifecyclePolicyEvaluationInput = {
+        request: context.request,
+        transitionDefinition: context.resolvedTransition,
+        fromMetadata: undefined,
+        toMetadata: undefined,
+        guardResult: context.guardResult,
+        validationResult: context.validationResult,
+        configuration: undefined,
+        environment: undefined,
+        featureFlags: undefined,
+        repositorySnapshot: undefined,
+        metadata: {
+          executionId: context.metadata.executionId,
+          correlationId: context.metadata.correlationId,
+          fromState: context.currentState,
+          toState: context.targetState,
+        },
+      };
+
+      const policyEvaluation = engine.evaluate(policyInput);
+
+      if (!policyEvaluation.allowed) {
+        return {
+          ...context,
+          policyResult: {
+            status: policyEvaluation.status === 'deferred' ? 'deferred' : 'rejected',
+            identifier: 'lifecycle.policy.engine',
+            reason: policyEvaluation.reason,
+            code: policyEvaluation.code,
+            metadata: {
+              ...policyEvaluation.metadata,
+              policyResults: policyEvaluation.policyResults,
+            },
+          },
+          status: 'rejected',
+          failure: new GuardFailure(policyEvaluation.reason, {
+            code: 'policy-rejection',
+            stageId: 'policy',
+            request: context.request,
+            policyResults: policyEvaluation.policyResults,
+          }),
+          metadata: {
+            ...context.metadata,
+            stageResults: {
+              ...context.metadata.stageResults,
+              policy: {
+                status: policyEvaluation.status,
+                code: policyEvaluation.code,
+              },
+            },
+          },
+        };
+      }
+
       return {
         ...context,
         policyResult: {
-          status: 'pending',
-          identifier: 'lifecycle.policy.placeholder',
-          reason: 'Policy evaluation will be provided by a future lifecycle policy engine.',
-          code: 'pending',
+          status: policyEvaluation.status,
+          identifier: 'lifecycle.policy.engine',
+          reason: policyEvaluation.reason,
+          code: policyEvaluation.code,
           metadata: {
-            fromState: context.currentState,
-            toState: context.targetState,
+            ...policyEvaluation.metadata,
+            policyResults: policyEvaluation.policyResults,
           },
         },
         metadata: {
@@ -465,8 +522,8 @@ function createPolicyStage(): TransitionPipelineStage {
           stageResults: {
             ...context.metadata.stageResults,
             policy: {
-              status: 'pending',
-              code: 'pending',
+              status: policyEvaluation.status,
+              code: policyEvaluation.code,
             },
           },
         },

@@ -6,3 +6,4 @@ export * from './registry';
 export * from './validation-registry';
 export * from './guard-registry';
 export * from './pipeline';
+export * from './policy-engine';
