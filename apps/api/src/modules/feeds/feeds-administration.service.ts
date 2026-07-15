@@ -1,4 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+import { FeedLifecycleService } from '@castaminofen/rss';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import type { UpdateFeedDto } from './dto/administration-request.dto';
 import type { UpdateConfigurationDto } from './dto/administration-request.dto';
@@ -32,7 +33,10 @@ export class FeedsAdministrationService {
   private readonly stateStore = new Map<string, FeedAdministrationState>();
   private readonly configurationStore = new Map<string, FeedConfigurationSnapshot>();
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly feedLifecycleService: FeedLifecycleService,
+  ) {}
 
   async updateFeed(feedId: string, dto: UpdateFeedDto) {
     const record = await this.findFeedOrThrow(feedId);
@@ -52,12 +56,13 @@ export class FeedsAdministrationService {
       data.language = dto.language;
     }
 
-    const updated = Object.keys(data).length > 0
-      ? await (this.prisma as any).podcast.update({
-          where: { id: feedId },
-          data,
-        })
-      : record;
+    const updated =
+      Object.keys(data).length > 0
+        ? await (this.prisma as any).podcast.update({
+            where: { id: feedId },
+            data,
+          })
+        : record;
 
     const state = this.mergeState(record, nextState);
     this.stateStore.set(feedId, state);
@@ -90,9 +95,21 @@ export class FeedsAdministrationService {
       };
     }
 
+    this.feedLifecycleService.transition({
+      feedId,
+      currentState: this.mapFeedState(record),
+      targetState: 'ACTIVE',
+      actor: 'admin',
+      reason: 'enable feed',
+      metadata: { source: 'feeds-administration-service' },
+    });
+
     const updated = await (this.prisma as any).podcast.update({
       where: { id: feedId },
-      data: { isActive: true },
+      data: {
+        isActive: true,
+        status: record.status === 'archived' ? 'draft' : record.status,
+      },
     });
 
     return {
@@ -115,9 +132,21 @@ export class FeedsAdministrationService {
       };
     }
 
+    this.feedLifecycleService.transition({
+      feedId,
+      currentState: this.mapFeedState(record),
+      targetState: 'DISABLED',
+      actor: 'admin',
+      reason: 'disable feed',
+      metadata: { source: 'feeds-administration-service' },
+    });
+
     const updated = await (this.prisma as any).podcast.update({
       where: { id: feedId },
-      data: { isActive: false },
+      data: {
+        isActive: false,
+        status: record.status === 'archived' ? 'archived' : record.status,
+      },
     });
 
     return {
@@ -139,6 +168,15 @@ export class FeedsAdministrationService {
         archived: true,
       };
     }
+
+    this.feedLifecycleService.transition({
+      feedId,
+      currentState: this.mapFeedState(record),
+      targetState: 'ARCHIVED',
+      actor: 'admin',
+      reason: 'archive feed',
+      metadata: { source: 'feeds-administration-service' },
+    });
 
     const updated = await (this.prisma as any).podcast.update({
       where: { id: feedId },
@@ -165,6 +203,15 @@ export class FeedsAdministrationService {
       };
     }
 
+    this.feedLifecycleService.transition({
+      feedId,
+      currentState: this.mapFeedState(record),
+      targetState: 'ACTIVE',
+      actor: 'admin',
+      reason: 'unarchive feed',
+      metadata: { source: 'feeds-administration-service' },
+    });
+
     const updated = await (this.prisma as any).podcast.update({
       where: { id: feedId },
       data: { status: 'draft' },
@@ -180,6 +227,15 @@ export class FeedsAdministrationService {
 
   async resetFeed(feedId: string) {
     const record = await this.findFeedOrThrow(feedId);
+
+    this.feedLifecycleService.transition({
+      feedId,
+      currentState: this.mapFeedState(record),
+      targetState: 'READY',
+      actor: 'admin',
+      reason: 'reset feed',
+      metadata: { source: 'feeds-administration-service' },
+    });
 
     const updated = await (this.prisma as any).podcast.update({
       where: { id: feedId },
@@ -275,7 +331,34 @@ export class FeedsAdministrationService {
     };
   }
 
-  private mergeState(record: { title: string; description: string | null; language: string | null }, nextState: FeedAdministrationState): FeedAdministrationState {
+  private mapFeedState(record: { isActive: boolean; status: string; syncStatus?: string }): string {
+    if (record.status === 'archived') {
+      return 'ARCHIVED';
+    }
+
+    if (record.status === 'deleted') {
+      return 'DELETED';
+    }
+
+    if (record.syncStatus === 'IMPORTING') {
+      return 'IMPORTING';
+    }
+
+    if (record.syncStatus === 'FAILED') {
+      return 'SYNC_FAILED';
+    }
+
+    if (record.isActive === false) {
+      return 'DISABLED';
+    }
+
+    return 'READY';
+  }
+
+  private mergeState(
+    record: { title: string; description: string | null; language: string | null },
+    nextState: FeedAdministrationState,
+  ): FeedAdministrationState {
     const existing = this.stateStore.get(record.title) ?? {};
     return {
       ...existing,
@@ -289,7 +372,10 @@ export class FeedsAdministrationService {
     };
   }
 
-  private buildConfiguration(record: { isActive: boolean; status: string }, feedId: string): FeedConfigurationSnapshot {
+  private buildConfiguration(
+    record: { isActive: boolean; status: string },
+    feedId: string,
+  ): FeedConfigurationSnapshot {
     const stored = this.configurationStore.get(feedId);
     const base: FeedConfigurationSnapshot = {
       syncEnabled: record.isActive,

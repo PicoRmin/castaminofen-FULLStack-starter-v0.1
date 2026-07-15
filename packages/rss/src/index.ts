@@ -58,3 +58,4 @@ export * from './health';
 export * from './telemetry';
 export * from './queue';
 export * from './observability';
+export * from './lifecycle';
