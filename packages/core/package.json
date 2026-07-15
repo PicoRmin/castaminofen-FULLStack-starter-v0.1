@@ -20,7 +20,7 @@
     "@castaminofen/types": "workspace:*"
   },
   "devDependencies": {
-    "typescript": "^5.6.3",
+    "typescript": "^6.0.3",
     "eslint": "^9.14.0",
     "@types/node": "^22.10.1"
   }
