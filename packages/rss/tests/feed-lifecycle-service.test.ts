@@ -2,7 +2,11 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 
 import {
+  type FeedLifecycleAggregate,
+  type FeedLifecycleDomainResult,
+  type FeedLifecycleRepository,
   FeedLifecycleService,
+  createTransitionCommand,
   getAllowedTransitions,
   getFeedLifecycleStateMachine,
   getFeedLifecycleStateMetadata,
@@ -49,4 +53,77 @@ test('exposes a centralized lifecycle registry and state metadata', () => {
     true,
   );
   assert.ok(recoveryTransitions.some((definition) => definition.id === 'sync-failed.active'));
+});
+
+test('applies an approved transition through the domain service and persists the aggregate', async () => {
+  const service = new FeedLifecycleService();
+
+  class TestAggregate implements FeedLifecycleAggregate {
+    constructor(
+      public readonly id: string,
+      public status: string,
+      public version: number,
+    ) {}
+
+    applyLifecycleTransition(input: {
+      previousState: string;
+      nextState: string;
+      reason: string;
+      actor: string;
+      timestamp: number;
+      correlationId?: string;
+      metadata?: Record<string, unknown>;
+    }): void {
+      this.status = input.nextState;
+      this.version += 1;
+    }
+  }
+
+  class TestRepository implements FeedLifecycleRepository {
+    public saved: FeedLifecycleAggregate[] = [];
+
+    async load(id: string): Promise<FeedLifecycleAggregate | undefined> {
+      return this.saved.find((aggregate) => aggregate.id === id);
+    }
+
+    async save(aggregate: FeedLifecycleAggregate): Promise<FeedLifecycleAggregate> {
+      this.saved = this.saved.filter((entry) => entry.id !== aggregate.id);
+      this.saved.push(aggregate);
+      return aggregate;
+    }
+  }
+
+  const aggregate = new TestAggregate('feed-1', 'DISABLED', 1);
+  const repository = new TestRepository();
+  await repository.save(aggregate);
+
+  const command = createTransitionCommand({
+    feedId: 'feed-1',
+    currentState: 'DISABLED',
+    targetState: 'ACTIVE',
+    actor: 'admin',
+    reason: 'Re-enabled by administrator',
+    metadata: { source: 'tests' },
+  });
+
+  const result = await service.applyTransition({
+    command,
+    aggregate,
+    repository,
+    plan: {
+      executionStrategy: 'sync',
+      executionMode: 'sync',
+      stages: [],
+      dependencies: [],
+      executionId: 'plan-1',
+      correlationId: command.correlationId,
+    },
+  });
+
+  assert.equal(result.success, true);
+  assert.equal(result.currentState, 'ACTIVE');
+  assert.equal(aggregate.status, 'ACTIVE');
+  assert.equal(aggregate.version, 2);
+  assert.equal(repository.saved[0]?.id, 'feed-1');
+  assert.equal(result.previousState, 'DISABLED');
 });

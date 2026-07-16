@@ -34,6 +34,97 @@ export interface FeedLifecycleTransitionResult {
   readonly metadata: Record<string, unknown>;
 }
 
+export interface FeedLifecycleAggregateMutation {
+  readonly previousState: FeedLifecycleState;
+  readonly nextState: FeedLifecycleState;
+  readonly reason: string;
+  readonly actor: string;
+  readonly timestamp: number;
+  readonly correlationId: string | undefined;
+  readonly metadata: Record<string, unknown>;
+}
+
+export interface FeedLifecycleAggregate {
+  readonly id: string;
+  readonly status?: string;
+  readonly state?: string;
+  readonly currentState?: string;
+  readonly lifecycleState?: string;
+  readonly version?: number;
+  readonly snapshot?: FeedLifecycleAggregateSnapshot;
+  applyLifecycleTransition(input: FeedLifecycleAggregateMutation): void;
+}
+
+export interface FeedLifecycleAggregateSnapshot {
+  readonly id: string;
+  readonly identity:
+    | Record<string, unknown>
+    | {
+        readonly id: string;
+        readonly slug?: string | null;
+        readonly providerId?: string | null;
+        readonly repositoryId?: string | null;
+        readonly tenantId?: string | null;
+      };
+  readonly status: string;
+  readonly currentState: string;
+  readonly lifecycleState: string;
+  readonly version: number;
+  readonly metadata: Record<string, unknown>;
+  readonly lifecycleMetadata: Record<string, unknown>;
+  readonly operationalMetadata: Record<string, unknown>;
+  readonly synchronizationMetadata: Record<string, unknown>;
+  readonly configurationSnapshot: Record<string, unknown>;
+  readonly subscriptionMetadata: Record<string, unknown>;
+  readonly regionalMetadata: Record<string, unknown>;
+  readonly createdAt: number;
+  readonly updatedAt: number;
+}
+
+export interface FeedLifecycleDomainEvent {
+  readonly type: string;
+  readonly aggregateId: string;
+  readonly version: number;
+  readonly occurredAt: number;
+  readonly state: string;
+  readonly metadata: Record<string, unknown>;
+}
+
+export interface FeedLifecycleRepository {
+  load?(id: string): Promise<FeedLifecycleAggregate | undefined>;
+  save?(aggregate: FeedLifecycleAggregate): Promise<FeedLifecycleAggregate>;
+}
+
+export interface FeedLifecycleExecutionPlan {
+  readonly executionStrategy?: string;
+  readonly executionMode?: string;
+  readonly stages?: readonly unknown[];
+  readonly dependencies?: readonly unknown[];
+  readonly executionId?: string;
+  readonly correlationId?: string;
+}
+
+export interface FeedLifecycleDomainFailure {
+  readonly code: string;
+  readonly message: string;
+  readonly details: Record<string, unknown>;
+}
+
+export interface FeedLifecycleDomainResult {
+  readonly success: boolean;
+  readonly aggregateId: string;
+  readonly previousState: FeedLifecycleState;
+  readonly currentState: FeedLifecycleState;
+  readonly transitionMetadata: Record<string, unknown>;
+  readonly executionMetadata: Record<string, unknown>;
+  readonly futureEventMetadata: Record<string, unknown>;
+  readonly futureAuditMetadata: Record<string, unknown>;
+  readonly futureMetricsMetadata: Record<string, unknown>;
+  readonly futureLoggingMetadata: Record<string, unknown>;
+  readonly repositoryUpdated: boolean;
+  readonly failure?: FeedLifecycleDomainFailure;
+}
+
 export interface FeedLifecycleLogger {
   readonly info?: (message: string, context?: Record<string, unknown>) => void;
   readonly warn?: (message: string, context?: Record<string, unknown>) => void;

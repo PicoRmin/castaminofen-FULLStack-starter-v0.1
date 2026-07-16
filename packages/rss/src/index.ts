@@ -66,6 +66,11 @@ export {
 } from './lifecycle/errors';
 export { FeedLifecycleService } from './lifecycle/service';
 export {
+  FeedLifecycleAggregateRoot,
+  type FeedLifecycleAggregateIdentity,
+  type FeedLifecycleAggregateRootInput,
+} from './lifecycle/aggregate';
+export {
   TransitionCommand,
   createTransitionCommand,
   type TransitionCommandActor,
@@ -133,8 +138,14 @@ export {
   getRecoveryTransitions,
 } from './lifecycle';
 export type {
+  FeedLifecycleAggregate,
+  FeedLifecycleAggregateMutation,
+  FeedLifecycleDomainFailure,
+  FeedLifecycleDomainResult,
+  FeedLifecycleExecutionPlan,
   FeedLifecycleHooks,
   FeedLifecycleLogger,
+  FeedLifecycleRepository,
   FeedLifecycleState,
   FeedLifecycleStateMachine,
   FeedLifecycleStateMetadata,

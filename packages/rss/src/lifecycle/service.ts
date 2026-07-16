@@ -8,8 +8,14 @@ import {
 import { getFeedLifecycleStateMachine } from './registry';
 import { TransitionExecutionCoordinator } from './coordinator';
 import type {
+  FeedLifecycleAggregate,
+  FeedLifecycleAggregateMutation,
+  FeedLifecycleDomainFailure,
+  FeedLifecycleDomainResult,
+  FeedLifecycleExecutionPlan,
   FeedLifecycleHooks,
   FeedLifecycleLogger,
+  FeedLifecycleRepository,
   FeedLifecycleState,
   FeedLifecycleTransition,
   FeedLifecycleTransitionRequest,
@@ -142,6 +148,149 @@ export class FeedLifecycleService {
     };
   }
 
+  async applyTransition(input: {
+    command: FeedLifecycleTransitionRequest | TransitionCommand;
+    aggregate?: FeedLifecycleAggregate;
+    repository?: FeedLifecycleRepository;
+    plan?: FeedLifecycleExecutionPlan;
+  }): Promise<FeedLifecycleDomainResult> {
+    const command =
+      input.command instanceof TransitionCommand
+        ? input.command
+        : createTransitionCommand(input.command as FeedLifecycleTransitionRequest);
+
+    const previousState = this.normalizeState(command.transition.currentState);
+    const nextState = this.normalizeState(command.transition.targetState);
+    const actor = command.actor.id;
+    const reason =
+      (command.executionContext.requestMetadata?.reason as string | undefined) ??
+      'state-transition';
+    const timestamp = command.timestamp;
+    const metadata = { ...(command.metadata.custom ?? {}) };
+
+    if (!this.isAllowedTransition(previousState, nextState)) {
+      return this.createFailureResult(command.feed.id, previousState, nextState, {
+        code: 'invalid-state-transition',
+        message: `Invalid state transition from ${previousState} to ${nextState}`,
+        details: {
+          feedId: command.feed.id,
+          fromState: previousState,
+          toState: nextState,
+          actor,
+          reason,
+        },
+      });
+    }
+
+    let aggregate = input.aggregate;
+    if (!aggregate && input.repository?.load) {
+      aggregate = await input.repository.load(command.feed.id);
+    }
+
+    if (!aggregate) {
+      return this.createFailureResult(command.feed.id, previousState, nextState, {
+        code: 'aggregate-not-found',
+        message: `Aggregate ${command.feed.id} was not found for lifecycle transition`,
+        details: {
+          feedId: command.feed.id,
+          fromState: previousState,
+          toState: nextState,
+        },
+      });
+    }
+
+    const aggregateState = this.readAggregateState(aggregate);
+    if (aggregateState !== undefined && this.normalizeState(aggregateState) !== previousState) {
+      return this.createFailureResult(command.feed.id, previousState, nextState, {
+        code: 'aggregate-conflict',
+        message: `Aggregate state ${aggregateState} does not match expected ${previousState}`,
+        details: {
+          feedId: command.feed.id,
+          expectedState: previousState,
+          actualState: aggregateState,
+        },
+      });
+    }
+
+    const mutation: FeedLifecycleAggregateMutation = {
+      previousState,
+      nextState,
+      reason,
+      actor,
+      timestamp,
+      correlationId: command.correlationId,
+      metadata,
+    };
+
+    try {
+      aggregate.applyLifecycleTransition(mutation);
+    } catch (error) {
+      return this.createFailureResult(command.feed.id, previousState, nextState, {
+        code: 'domain-execution-failure',
+        message: error instanceof Error ? error.message : 'Aggregate mutation failed',
+        details: {
+          feedId: command.feed.id,
+          fromState: previousState,
+          toState: nextState,
+          error,
+        },
+      });
+    }
+
+    let repositoryUpdated = false;
+    if (input.repository?.save) {
+      try {
+        await input.repository.save(aggregate);
+        repositoryUpdated = true;
+      } catch (error) {
+        return this.createFailureResult(command.feed.id, previousState, nextState, {
+          code: 'persistence-preparation-failure',
+          message: error instanceof Error ? error.message : 'Repository save failed',
+          details: {
+            feedId: command.feed.id,
+            fromState: previousState,
+            toState: nextState,
+            error,
+          },
+        });
+      }
+    }
+
+    this.logger?.info?.('lifecycle.domain.applied', {
+      feedId: command.feed.id,
+      from: previousState,
+      to: nextState,
+      actor,
+      repositoryUpdated,
+    });
+
+    return {
+      success: true,
+      aggregateId: command.feed.id,
+      previousState,
+      currentState: nextState,
+      transitionMetadata: {
+        reason,
+        actor,
+        correlationId: command.correlationId,
+        commandId: command.id,
+        executionId: command.executionId,
+        planExecutionId: input.plan?.executionId,
+      },
+      executionMetadata: {
+        executionStrategy: input.plan?.executionStrategy,
+        executionMode: input.plan?.executionMode,
+        stageCount: input.plan?.stages?.length ?? 0,
+        dependencyCount: input.plan?.dependencies?.length ?? 0,
+      },
+      futureEventMetadata: {},
+      futureAuditMetadata: {},
+      futureMetricsMetadata: {},
+      futureLoggingMetadata: {},
+      repositoryUpdated,
+    };
+  }
+
   canImport(state: FeedLifecycleState | string): boolean {
     const normalized = this.normalizeState(state);
     return normalized === 'READY' || normalized === 'ACTIVE' || normalized === 'REGISTERED';
@@ -192,6 +341,38 @@ export class FeedLifecycleService {
     nextState: FeedLifecycleState,
   ): boolean {
     return getFeedLifecycleStateMachine().canTransition(previousState, nextState);
+  }
+
+  private readAggregateState(aggregate: FeedLifecycleAggregate): string | undefined {
+    return (
+      aggregate.status ??
+      aggregate.state ??
+      aggregate.currentState ??
+      aggregate.lifecycleState ??
+      undefined
+    );
+  }
+
+  private createFailureResult(
+    aggregateId: string,
+    previousState: FeedLifecycleState,
+    nextState: FeedLifecycleState,
+    failure: FeedLifecycleDomainFailure,
+  ): FeedLifecycleDomainResult {
+    return {
+      success: false,
+      aggregateId,
+      previousState,
+      currentState: nextState,
+      transitionMetadata: {},
+      executionMetadata: {},
+      futureEventMetadata: {},
+      futureAuditMetadata: {},
+      futureMetricsMetadata: {},
+      futureLoggingMetadata: {},
+      repositoryUpdated: false,
+      failure,
+    };
   }
 
   private normalizeState(state: FeedLifecycleState | string): FeedLifecycleState {
