@@ -51,7 +51,43 @@ export interface FeedLifecycleAggregate {
   readonly currentState?: string;
   readonly lifecycleState?: string;
   readonly version?: number;
+  readonly snapshot?: FeedLifecycleAggregateSnapshot;
   applyLifecycleTransition(input: FeedLifecycleAggregateMutation): void;
+}
+
+export interface FeedLifecycleAggregateSnapshot {
+  readonly id: string;
+  readonly identity:
+    | Record<string, unknown>
+    | {
+        readonly id: string;
+        readonly slug?: string | null;
+        readonly providerId?: string | null;
+        readonly repositoryId?: string | null;
+        readonly tenantId?: string | null;
+      };
+  readonly status: string;
+  readonly currentState: string;
+  readonly lifecycleState: string;
+  readonly version: number;
+  readonly metadata: Record<string, unknown>;
+  readonly lifecycleMetadata: Record<string, unknown>;
+  readonly operationalMetadata: Record<string, unknown>;
+  readonly synchronizationMetadata: Record<string, unknown>;
+  readonly configurationSnapshot: Record<string, unknown>;
+  readonly subscriptionMetadata: Record<string, unknown>;
+  readonly regionalMetadata: Record<string, unknown>;
+  readonly createdAt: number;
+  readonly updatedAt: number;
+}
+
+export interface FeedLifecycleDomainEvent {
+  readonly type: string;
+  readonly aggregateId: string;
+  readonly version: number;
+  readonly occurredAt: number;
+  readonly state: string;
+  readonly metadata: Record<string, unknown>;
 }
 
 export interface FeedLifecycleRepository {

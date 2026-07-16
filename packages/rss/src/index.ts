@@ -66,6 +66,11 @@ export {
 } from './lifecycle/errors';
 export { FeedLifecycleService } from './lifecycle/service';
 export {
+  FeedLifecycleAggregateRoot,
+  type FeedLifecycleAggregateIdentity,
+  type FeedLifecycleAggregateRootInput,
+} from './lifecycle/aggregate';
+export {
   TransitionCommand,
   createTransitionCommand,
   type TransitionCommandActor,
