@@ -3,6 +3,14 @@ export * from './contracts';
 export * from './errors';
 export * from './service';
 export * from './types';
+export type {
+  FeedLifecycleAggregate,
+  FeedLifecycleAggregateMutation,
+  FeedLifecycleDomainFailure,
+  FeedLifecycleDomainResult,
+  FeedLifecycleExecutionPlan,
+  FeedLifecycleRepository,
+} from './types';
 export * from './registry';
 export * from './validation-registry';
 export * from './guard-registry';

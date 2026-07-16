@@ -133,8 +133,14 @@ export {
   getRecoveryTransitions,
 } from './lifecycle';
 export type {
+  FeedLifecycleAggregate,
+  FeedLifecycleAggregateMutation,
+  FeedLifecycleDomainFailure,
+  FeedLifecycleDomainResult,
+  FeedLifecycleExecutionPlan,
   FeedLifecycleHooks,
   FeedLifecycleLogger,
+  FeedLifecycleRepository,
   FeedLifecycleState,
   FeedLifecycleStateMachine,
   FeedLifecycleStateMetadata,
