@@ -1,4 +1,4 @@
-# .github
+## .github
 
 This folder contains GitHub-specific project automation and collaboration assets.
 
