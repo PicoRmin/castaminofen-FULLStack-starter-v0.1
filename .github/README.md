@@ -2,7 +2,7 @@
 
 This folder contains GitHub-specific project automation and collaboration assets.
 
-## Purpose
+### Purpose
 - stores workflows, issue templates, and repository automation
 - centralizes pull request and contribution conventions
 - supports CI/CD and repository governance
